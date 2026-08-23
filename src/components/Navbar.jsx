@@ -1,17 +1,18 @@
 import { Link } from "react-router-dom"
-
+import logo from "../assets/icons/saptavachan2.png"
 function Navbar() {
   return (
     <>
      <nav className="navbar">
+            <img src={logo} alt="" className="logo"/>
         <div className="navLinks">
           <Link to="/home">Home</Link>
           <Link to="/findmatches">Find Matches</Link>
           <Link to="/interests">Interests</Link>
           <Link to="/messages">Messages</Link>
           <Link to="/notification">Notification</Link>
-          <Link to="/myprofile">My Profile</Link>
         </div>
+        <Link to="/myprofile" className="icon-profile"><i class="fa-solid fa-circle-user"></i></Link>
       </nav>
     </>
   )
