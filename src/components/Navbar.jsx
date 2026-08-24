@@ -16,7 +16,7 @@ function Navbar() {
           <Link to="/notification">Notification</Link>
         </div>
         <Link to="/myprofile" className="icon-profile"><i class="fa-solid fa-circle-user"></i></Link>
-        <button onClick={()=> setShow(true)}><i class="fa-solid fa-bars"></i></button>
+        <button onClick={()=> setShow(!show)} className="homebuger"><i class="fa-solid fa-bars"></i></button>
       </nav>
       {
         show && (
@@ -26,7 +26,7 @@ function Navbar() {
           <Link to="/interests">Interests</Link>
           <Link to="/messages">Messages</Link>
           <Link to="/notification">Notification</Link>
-           <Link to="/myprofile" className="icon-profile"><i class="fa-solid fa-circle-user"></i></Link>
+           <Link to="/myprofile" className="icon-profile-new"><i class="fa-solid fa-circle-user"></i></Link>
         </div>
         )
       }
