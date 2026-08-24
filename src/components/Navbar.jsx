@@ -16,6 +16,7 @@ function Navbar() {
           <Link to="/notification">Notification</Link>
         </div>
         <Link to="/myprofile" className="icon-profile"><i class="fa-solid fa-circle-user"></i></Link>
+        <button><i class="fa-solid fa-bars"></i></button>
       </nav>
     </>
   )
