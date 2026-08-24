@@ -16,6 +16,7 @@
 .navLinks{
   display: flex;
   gap: 80px;
+  z-index: 10;
 }
 .logo{
   height: 70px;

@@ -16,8 +16,20 @@ function Navbar() {
           <Link to="/notification">Notification</Link>
         </div>
         <Link to="/myprofile" className="icon-profile"><i class="fa-solid fa-circle-user"></i></Link>
-        <button><i class="fa-solid fa-bars"></i></button>
+        <button onClick={()=> setShow(true)}><i class="fa-solid fa-bars"></i></button>
       </nav>
+      {
+        show && (
+          <div className="navLinks-home">
+          <Link to="/home">Home</Link>
+          <Link to="/findmatches">Find Matches</Link>
+          <Link to="/interests">Interests</Link>
+          <Link to="/messages">Messages</Link>
+          <Link to="/notification">Notification</Link>
+           <Link to="/myprofile" className="icon-profile"><i class="fa-solid fa-circle-user"></i></Link>
+        </div>
+        )
+      }
     </>
   )
 }
