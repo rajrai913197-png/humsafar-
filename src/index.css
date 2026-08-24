@@ -290,3 +290,32 @@
   }
 
 }
+.homebuger{
+  border: none;
+  background-color:#FFF9F2 ;
+}
+.bugerLinks{
+  font-size:small !important;
+}
+#bugerLinksStyle{
+  font-size:small !important;
+  border: 2px solid #7B1828;
+  height: 40px;
+  border-radius: 2px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: burlywood;
+  color: #7B1828;
+}
+#bugerLinksStyle2{
+   font-size:small !important;
+  /* border: 2px solid #7B1828; */
+  height: 40px;
+  border-radius: 2px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #1a1108;
+  color: #FDF7EF;
+}
