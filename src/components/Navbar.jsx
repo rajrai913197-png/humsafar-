@@ -1,7 +1,10 @@
 import { Link } from "react-router-dom"
 import logo from "../assets/icons/saptavachan2.png"
+import { useState } from "react"
 function Navbar() {
+   const [show,setShow]= useState(false)
   return (
+   
     <>
      <nav className="navbar">
             <img src={logo} alt="" className="logo"/>
