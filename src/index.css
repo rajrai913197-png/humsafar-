@@ -36,4 +36,11 @@
   display: none;
  
 }
+.logo{
+  height: 60px;
+}
+.icon-profile{
+  display: none;
+}
+
 }
