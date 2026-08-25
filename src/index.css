@@ -319,3 +319,10 @@
   background-color: #1a1108;
   color: #FDF7EF;
 }
+.hero-div{
+  height: 600px;
+  width: 100%;
+  background-image: url("./assets/images/shadi.jpg");
+ background-size: cover;
+ 
+}
