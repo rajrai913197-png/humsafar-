@@ -5,64 +5,8 @@
 import axios from "axios"
 import { useState } from "react";
 import { useEffect } from "react"
-// const profiles = [
-//   {
 
-//     name: "Ananya Sharma",
 
-//     age: 26,
-
-//     profession: "Software Engineer",
-
-//     location: "Bhopal, Madhya Pradesh",
-
-//     image: "https://i.pravatar.cc/600?img=47",
-
-//   },
-
-//   {
-
-//     name: "Riya Verma",
-
-//     age: 25,
-
-//     profession: "Architect",
-
-//     location: "Indore, Madhya Pradesh",
-
-//     image: "https://i.pravatar.cc/600?img=44",
-
-//   },
-
-//   {
-
-//     name: "Kavya Patel",
-
-//     age: 27,
-
-//     profession: "Doctor",
-
-//     location: "Mumbai, Maharashtra",
-
-//     image: "https://i.pravatar.cc/600?img=49",
-
-//   },
-
-//   {
-
-//     name: "Sneha Mehta",
-
-//     age: 24,
-
-//     profession: "Marketing Manager",
-
-//     location: "Delhi, India",
-
-//     image: "https://i.pravatar.cc/600?img=45",
-
-//   },
-
-// ];
 
 function Home() {
  const  [profiles,setProfiles]= useState([])

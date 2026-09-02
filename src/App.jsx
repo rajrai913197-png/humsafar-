@@ -7,6 +7,7 @@ import Chat from "./pages/Chat"
 import Myprofile from "./pages/Myprofile"
 import Notifications from "./pages/Notifications"
 import CreateProfile from "./pages/CreateProfile"
+import ProfilesDetails from "./pages/ProfilesDetails"
 function App() {
   return (
     <>
@@ -20,6 +21,7 @@ function App() {
       <Route path="notification" element = {<Notifications />} />
       <Route path="myprofile" element = {<Myprofile />} />
       <Route path="createprofile" element = {<CreateProfile />} />
+      <Route path="profiledetail/:id" element = {<ProfilesDetails />} />
      </Route>
     </Routes>
     </>

@@ -1,141 +1,19 @@
-import { useState } from "react";
+import { useState ,useEffect} from "react";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
-const profiles = [
 
-  {
-
-    id: 1,
-
-    name: "Ananya Sharma",
-
-    age: 26,
-
-    profession: "Software Engineer",
-
-    location: "Bhopal, Madhya Pradesh",
-
-    education: "B.Tech",
-
-    community: "Hindu",
-
-    image: "https://i.pravatar.cc/700?img=47",
-
-    verified: true,
-
-  },
-
-  {
-
-    id: 2,
-
-    name: "Riya Verma",
-
-    age: 25,
-
-    profession: "Architect",
-
-    location: "Indore, Madhya Pradesh",
-
-    education: "B.Arch",
-
-    community: "Hindu",
-
-    image: "https://i.pravatar.cc/700?img=44",
-
-    verified: true,
-
-  },
-
-  {
-
-    id: 3,
-
-    name: "Kavya Patel",
-
-    age: 27,
-
-    profession: "Doctor",
-
-    location: "Mumbai, Maharashtra",
-
-    education: "MBBS",
-
-    community: "Hindu",
-
-    image: "https://i.pravatar.cc/700?img=49",
-
-    verified: true,
-
-  },
-
-  {
-
-    id: 4,
-
-    name: "Sneha Mehta",
-
-    age: 24,
-
-    profession: "Marketing Manager",
-
-    location: "Delhi, India",
-
-    education: "MBA",
-
-    community: "Hindu",
-
-    image: "https://i.pravatar.cc/700?img=45",
-
-    verified: true,
-
-  },
-
-  {
-
-    id: 5,
-
-    name: "Pooja Singh",
-
-    age: 28,
-
-    profession: "HR Manager",
-
-    location: "Pune, Maharashtra",
-
-    education: "MBA",
-
-    community: "Hindu",
-
-    image: "https://i.pravatar.cc/700?img=32",
-
-    verified: true,
-
-  },
-
-  {
-
-    id: 6,
-
-    name: "Meera Joshi",
-
-    age: 26,
-
-    profession: "Teacher",
-
-    location: "Jaipur, Rajasthan",
-
-    education: "M.Ed",
-
-    community: "Hindu",
-
-    image: "https://i.pravatar.cc/700?img=25",
-
-    verified: false,
-
-  },
-
-];
 function FindMatches() {
+  const navigate = useNavigate()
+   const  [profiles,setProfiles]= useState([])
+  const GetUser = ()=>{
+     axios.get("http://localhost:3300/getUser")
+     .then((res)=> setProfiles(res.data))
+     .catch(err => console.log(err))
+  }
+  useEffect(()=>{
+    GetUser()
+  },[])
    const [filterOpen, setFilterOpen] = useState(false);
  return(
   <>
@@ -229,16 +107,16 @@ function FindMatches() {
       <section className="profile-grid">
 
         {profiles.map((profile) => (
-
-          <article className="match-card" key={profile.id}>
-
+           
+          <article className="match-card" key={profile._id}>
+           
             {/* IMAGE */}
 
             <div className="match-image">
 
               <img
 
-                src={profile.image}
+                src={`http://localhost:3300/upload/${profile.image}`}
 
                 alt={profile.name}
 
@@ -247,7 +125,7 @@ function FindMatches() {
               {profile.verified && (
 
                 <span className="verified">
-
+                  
                   ✓ Verified
 
                 </span>
@@ -310,7 +188,7 @@ function FindMatches() {
 
                 </span>
 
-                <button className="view-profile">
+                <button className="view-profile" onClick={()=> navigate(`/profiledetail/${profile._id}`)}>
 
                   View Profile →
 
