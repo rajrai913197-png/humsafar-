@@ -1,66 +1,79 @@
 
 
-const profiles = [
 
-  {
 
-    name: "Ananya Sharma",
+import axios from "axios"
+import { useState } from "react";
+import { useEffect } from "react"
+// const profiles = [
+//   {
 
-    age: 26,
+//     name: "Ananya Sharma",
 
-    profession: "Software Engineer",
+//     age: 26,
 
-    location: "Bhopal, Madhya Pradesh",
+//     profession: "Software Engineer",
 
-    image: "https://i.pravatar.cc/600?img=47",
+//     location: "Bhopal, Madhya Pradesh",
 
-  },
+//     image: "https://i.pravatar.cc/600?img=47",
 
-  {
+//   },
 
-    name: "Riya Verma",
+//   {
 
-    age: 25,
+//     name: "Riya Verma",
 
-    profession: "Architect",
+//     age: 25,
 
-    location: "Indore, Madhya Pradesh",
+//     profession: "Architect",
 
-    image: "https://i.pravatar.cc/600?img=44",
+//     location: "Indore, Madhya Pradesh",
 
-  },
+//     image: "https://i.pravatar.cc/600?img=44",
 
-  {
+//   },
 
-    name: "Kavya Patel",
+//   {
 
-    age: 27,
+//     name: "Kavya Patel",
 
-    profession: "Doctor",
+//     age: 27,
 
-    location: "Mumbai, Maharashtra",
+//     profession: "Doctor",
 
-    image: "https://i.pravatar.cc/600?img=49",
+//     location: "Mumbai, Maharashtra",
 
-  },
+//     image: "https://i.pravatar.cc/600?img=49",
 
-  {
+//   },
 
-    name: "Sneha Mehta",
+//   {
 
-    age: 24,
+//     name: "Sneha Mehta",
 
-    profession: "Marketing Manager",
+//     age: 24,
 
-    location: "Delhi, India",
+//     profession: "Marketing Manager",
 
-    image: "https://i.pravatar.cc/600?img=45",
+//     location: "Delhi, India",
 
-  },
+//     image: "https://i.pravatar.cc/600?img=45",
 
-];
+//   },
+
+// ];
 
 function Home() {
+ const  [profiles,setProfiles]= useState([])
+  const GetUser = ()=>{
+     axios.get("http://localhost:3300/getUser")
+     .then((res)=> setProfiles(res.data))
+     .catch(err => console.log(err))
+  }
+  useEffect(()=>{
+    GetUser()
+  },[])
   return (
    <>
     <section className="hero-slider">
@@ -273,7 +286,7 @@ function Home() {
 
               <img
 
-                src={profile.image}
+                src={`http://localhost:3300/upload/${profile.image}`}
 
                 alt={profile.name}
 
