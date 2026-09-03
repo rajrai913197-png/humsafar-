@@ -1,6 +1,8 @@
 import { useState } from "react";
 import axios from "axios"
+import{jwtDecode} from "jwt-decode"
 const CreateProfile = () => {
+
    const [formData, setFormData] = useState({
 
     name: "",
@@ -56,13 +58,17 @@ const CreateProfile = () => {
     data.append("bio", formData.bio);
 
     data.append("image", formData.image);
-   
-    axios.post("http://localhost:3300/createUser",data)
-    .then(()=> alert("profile created"))
-    .catch(err => console.log(err))
+     const token =  localStorage.getItem("token")
+  const decoded =   jwtDecode(token)
+    let id = decoded.userId
+
+     axios.put(`http://localhost:3300/userProfile/${id}`,data)
+     .then((res)=> setFormData(res.data))
+     .catch(err => console.log(err))
 
 
   };
+ 
 
   return (
 

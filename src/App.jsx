@@ -8,6 +8,8 @@ import Myprofile from "./pages/Myprofile"
 import Notifications from "./pages/Notifications"
 import CreateProfile from "./pages/CreateProfile"
 import ProfilesDetails from "./pages/ProfilesDetails"
+import SignUp from "./pages/SignUp"
+import Login from "./pages/Login"
 function App() {
   return (
     <>
@@ -22,6 +24,8 @@ function App() {
       <Route path="myprofile" element = {<Myprofile />} />
       <Route path="createprofile" element = {<CreateProfile />} />
       <Route path="profiledetail/:id" element = {<ProfilesDetails />} />
+      <Route path="signup" element ={<SignUp />} />
+      <Route path = "login" element = {<Login />} />
      </Route>
     </Routes>
     </>
