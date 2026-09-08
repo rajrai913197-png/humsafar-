@@ -26,6 +26,7 @@ function App() {
       <Route path="profiledetail/:id" element = {<ProfilesDetails />} />
       <Route path="signup" element ={<SignUp />} />
       <Route path = "login" element = {<Login />} />
+      {/* <Route path="profileDetails/:id" element={<ProfilesDetails />} /> */}
      </Route>
     </Routes>
     </>

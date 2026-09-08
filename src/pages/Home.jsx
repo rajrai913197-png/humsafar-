@@ -5,19 +5,141 @@
 import axios from "axios"
 import { useState } from "react";
 import { useEffect } from "react"
+import { useNavigate } from "react-router-dom";
 
 
 
 function Home() {
  const  [profiles,setProfiles]= useState([])
+ const [age,setAge]=useState([])
+ const [city,setCity]=useState([])
+  const [gender,setGender]=useState([])
+  const [community,setCommunity]=useState([])
+   const [profileFilter,setProfileFilter]=useState({
+      age : [],
+      gender : [],
+      religion : [],
+      city : []
+  })
+ const navigate = useNavigate()
+ const getAge = ()=>{
+    axios.get("http://localhost:3300/ageGet")
+    .then((res)=>setAge(res.data))
+    .catch(err => console.log(err))
+ }
+ const getCity = ()=>{
+    axios.get("http://localhost:3300/getcity")
+    .then((res)=>setCity(res.data))
+    .catch(err => console.log(err))
+ }
   const GetUser = ()=>{
-     axios.get("http://localhost:3300/getUser")
+    if (  profileFilter.age.length > 0 ||
+
+    profileFilter.gender.length > 0 ||
+
+    profileFilter.religion.length > 0 ||
+
+    profileFilter.city.length > 0) {
+        axios.get("http://localhost:3300/filterUser",{
+          params : profileFilter,
+          paramsSerializer :{
+            indexes : null
+          }
+        })
+        .then((res )=> setProfiles(res.data))
+        .catch(err => console.log(err))
+    } else{
+         axios.get("http://localhost:3300/getUser")
      .then((res)=> setProfiles(res.data))
+     
+     .catch(err => console.log(err))
+    }
+  }
+  const GetGender = ()=>{
+     axios.get("http://localhost:3300/getgender")
+     .then((res)=> setGender(res.data))
      .catch(err => console.log(err))
   }
-  useEffect(()=>{
+   const Getcommunity = ()=>{
+     axios.get("http://localhost:3300/community")
+     .then((res)=> setCommunity(res.data))
+     .catch(err => console.log(err))
+  }
+  
+  const ageCall = age.map((e)=>{
+    return(
+      <>
+        <option value={e}>{e}</option>
+      </>
+    )
+  })
+  const myCity = city.map((e)=>{
+    return(
+      <>
+      <option value={e}>{e}</option>
+      </>
+    )
+  })
+  const myGender = gender.map((e)=>{
+    return(
+      <>
+      <option value={e}>{e}</option>
+      </>
+    )
+  })
+  const myCommunity = community.map((e)=>{
+    return(
+      <>
+      <option value={e}>{e}</option>
+      </>
+    )
+  })
+ 
+  const filterHandlerAge =(e)=>{
+     const filterAgevalue =  Array.from(e.target.selectedOptions).map(
+        item => item.value
+       )
+        setProfileFilter({
+    ...profileFilter,
+      age : filterAgevalue
+  })
+  }
+  const filterHandlerCity =(e)=>{
+       const filterCityvalue =  Array.from(e.target.selectedOptions).map(
+        item => item.value
+       )
+        setProfileFilter({
+    ...profileFilter,
+      city : filterCityvalue
+  })
+}
+const filterHandlerGender =(e)=>{
+       const filterGendervalue =  Array.from(e.target.selectedOptions).map(
+        item => item.value
+       )
+        setProfileFilter({
+    ...profileFilter,
+      gender : filterGendervalue
+  })
+}
+const filterHandlerCommunity =(e)=>{
+       const filtercommunityvalue =  Array.from(e.target.selectedOptions).map(
+        item => item.value
+       )
+        setProfileFilter({
+    ...profileFilter,
+      religion : filtercommunityvalue
+  })
+}
+
+useEffect(()=>{
+    getAge()
     GetUser()
+    getCity()
+    GetGender()
+    Getcommunity()
   },[])
+console.log(profileFilter)
   return (
    <>
     <section className="hero-slider">
@@ -95,31 +217,9 @@ function Home() {
 
           <label>Looking For</label>
 
-          <select>
+          <select multiple onChange={filterHandlerGender}>
 
-            <option>Women</option>
-
-            <option>Men</option>
-
-          </select>
-
-        </div>
-
-        <div className="filter-field">
-
-          <label>Age From</label>
-
-          <select>
-
-            <option>21</option>
-
-            <option>22</option>
-
-            <option>23</option>
-
-            <option>24</option>
-
-            <option>25</option>
+            {myGender}
 
           </select>
 
@@ -129,17 +229,8 @@ function Home() {
 
           <label>Age To</label>
 
-          <select>
-
-            <option>30</option>
-
-            <option>31</option>
-
-            <option>32</option>
-
-            <option>35</option>
-
-            <option>40</option>
+          <select multiple onChange={filterHandlerAge}>
+           {ageCall}
 
           </select>
 
@@ -149,18 +240,11 @@ function Home() {
 
           <label>Location</label>
 
-          <select>
+          <select multiple onChange={filterHandlerCity}>
 
             <option>Any Location</option>
-
-            <option>Bhopal</option>
-
-            <option>Indore</option>
-
-            <option>Delhi</option>
-
-            <option>Mumbai</option>
-
+            {myCity}
+            
           </select>
 
         </div>
@@ -169,23 +253,14 @@ function Home() {
 
           <label>Community</label>
 
-          <select>
+          <select multiple onChange={filterHandlerCommunity}>
 
-            <option>Any Community</option>
-
-            <option>Hindu</option>
-
-            <option>Muslim</option>
-
-            <option>Sikh</option>
-
-            <option>Christian</option>
-
+            {myCommunity}
           </select>
 
         </div>
 
-        <button className="filter-btn">
+        <button className="filter-btn" onClick={ GetUser}>
 
           Search Matches →
 
@@ -221,7 +296,7 @@ function Home() {
       <div className="profiles-grid">
 
         {profiles.map((profile) => (
-
+         
           <div className="profile-card" key={profile.name}>
 
             {/* IMAGE */}
@@ -274,7 +349,7 @@ function Home() {
 
               <p className="location">
 
-                ♧ {profile.location}
+                ♧ {profile.city}
 
               </p>
 
@@ -288,7 +363,7 @@ function Home() {
 
                 </span>
 
-                <button>
+                <button  onClick={()=> navigate(`/profiledetail/${profile._id}`)}>
 
                   View Profile →
 

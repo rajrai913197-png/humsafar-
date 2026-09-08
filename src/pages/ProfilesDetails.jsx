@@ -101,7 +101,7 @@ const ProfilesDetails = () => {
 
           <p className="profile-basic-location">
 
-            📍 {profile.location || "Location not mentioned"}
+            📍 {profile.city || "Location not mentioned"}
 
           </p>
 
@@ -219,7 +219,7 @@ const ProfilesDetails = () => {
 
                 <strong>
 
-                  {profile.location || "Not mentioned"}
+                  {profile.city || "Not mentioned"}
 
                 </strong>
 
