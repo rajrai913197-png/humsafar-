@@ -10,6 +10,8 @@ import CreateProfile from "./pages/CreateProfile"
 import ProfilesDetails from "./pages/ProfilesDetails"
 import SignUp from "./pages/SignUp"
 import Login from "./pages/Login"
+import Admin from "./pages/Admin"
+import ProfileProtect from "./components/ProtectedRoute"
 function App() {
   return (
     <>
@@ -21,14 +23,26 @@ function App() {
      <Route path="interests" element = {<Interests />} />
       <Route path="messages" element = {<Chat />} />
       <Route path="notification" element = {<Notifications />} />
-      <Route path="myprofile" element = {<Myprofile />} />
+      <Route path="myprofile" element = {
+        <ProfileProtect >
+            <Myprofile />
+        </ProfileProtect>
+      } />
       <Route path="createprofile" element = {<CreateProfile />} />
       <Route path="profiledetail/:id" element = {<ProfilesDetails />} />
       <Route path="signup" element ={<SignUp />} />
       <Route path = "login" element = {<Login />} />
-      {/* <Route path="profileDetails/:id" element={<ProfilesDetails />} /> */}
+      
+    
      </Route>
+       <Route path = "admin" element = {
+        <ProfileProtect >
+           <Admin />
+        </ProfileProtect>
+       
+        } />
     </Routes>
+  
     </>
   )
 }

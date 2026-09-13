@@ -49,12 +49,12 @@ const CreateProfile = () => {
     data.append("siblings", formData.siblings);
 
     const token = localStorage.getItem("token");
+    console.log(token)
     const decoded = jwtDecode(token);
 
     const id = decoded.userId;
-
-    axios
-      .put(`http://localhost:3300/userProfile/${id}`, data)
+     
+    axios.put(`http://localhost:3300/userProfile/${id}`,  data ,{headers:{ Authorization: token}})
       .then((res) => {
         console.log(res.data);
       })

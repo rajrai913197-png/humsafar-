@@ -1,423 +1,440 @@
-import { useState ,useEffect} from "react";
+import { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-
+import { jwtDecode } from "jwt-decode";
 
 function FindMatches() {
-  const navigate = useNavigate()
-   const  [profiles,setProfiles]= useState([])
-  const GetUser = ()=>{
-     axios.get("http://localhost:3300/getUser")
-     .then((res)=> setProfiles(res.data))
-     .catch(err => console.log(err))
-  }
-  useEffect(()=>{
-    GetUser()
-  },[])
-   const [filterOpen, setFilterOpen] = useState(false);
- return(
-  <>
 
-    <main className="find-page">
+  const token = localStorage.getItem("token");
 
-      {/* PAGE HEADER */}
+  const decoded = token ? jwtDecode(token) : null;
 
-      <section className="find-header">
+  const navigate = useNavigate();
 
-        <div>
+  const [profiles, setProfiles] = useState([]);
+  const [filterOpen, setFilterOpen] = useState(false);
 
-          <p className="find-label">DISCOVER CONNECTIONS</p>
+  const GetUser = () => {
 
-          <h1>
+    axios.get("http://localhost:3300/getUser")
+      .then((res) => {
 
-            Find Your <span>Match</span>
+        // Logged-in user ki ID
+        const myId = decoded?.userId;
 
-          </h1>
+        console.log("My ID:", myId);
 
-          <p className="find-subtitle">
+        // Apni profile ko remove karo
+        const otherProfiles = res.data.filter(
+          (profile) => profile._id !== myId
+        );
 
-            Discover meaningful profiles who could be
+        setProfiles(otherProfiles);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  };
 
-            your perfect life partner.
+  useEffect(() => {
+    GetUser();
+  }, []);
 
-          </p>
+  return (
+    <>
+      <main className="find-page">
 
-        </div>
+        {/* PAGE HEADER */}
 
-      </section>
+        <section className="find-header">
 
-      {/* TOOLBAR */}
+          <div>
 
-      <section className="find-toolbar">
+            <p className="find-label">
+              DISCOVER CONNECTIONS
+            </p>
 
-        <div className="results-count">
+            <h1>
+              Find Your <span>Match</span>
+            </h1>
 
-          <strong>2,458</strong> matches found
-
-        </div>
-
-        <div className="toolbar-actions">
-
-          <div className="search-box">
-
-            <span>⌕</span>
-
-            <input
-
-              type="text"
-
-              placeholder="Search profiles..."
-
-            />
+            <p className="find-subtitle">
+              Discover meaningful profiles who could be
+              your perfect life partner.
+            </p>
 
           </div>
 
-          <button
+        </section>
 
-            className="filter-button"
 
-            onClick={() => setFilterOpen(true)}
+        {/* TOOLBAR */}
 
-          >
+        <section className="find-toolbar">
 
-            ☷ &nbsp; Filters
+          <div className="results-count">
 
-          </button>
+            <strong>{profiles.length}</strong> matches found
 
-          <select className="sort-select">
+          </div>
 
-            <option>Recommended</option>
+          <div className="toolbar-actions">
 
-            <option>Recently Active</option>
+            <div className="search-box">
 
-            <option>Newest Profiles</option>
+              <span>⌕</span>
 
-            <option>Age: Low to High</option>
-
-            <option>Age: High to Low</option>
-
-          </select>
-
-        </div>
-
-      </section>
-
-      {/* PROFILE GRID */}
-
-      <section className="profile-grid">
-
-        {profiles.map((profile) => (
-           
-          <article className="match-card" key={profile._id}>
-           
-            {/* IMAGE */}
-
-            <div className="match-image">
-
-              <img
-
-                src={`http://localhost:3300/upload/${profile.image}`}
-
-                alt={profile.name}
-
+              <input
+                type="text"
+                placeholder="Search profiles..."
               />
-
-              {profile.verified && (
-
-                <span className="verified">
-                  
-                  ✓ Verified
-
-                </span>
-
-              )}
-
-              <button className="heart-button">
-
-                ♡
-
-              </button>
 
             </div>
 
-            {/* DETAILS */}
+            <button
+              className="filter-button"
+              onClick={() => setFilterOpen(true)}
+            >
+              ☷ &nbsp; Filters
+            </button>
 
-            <div className="match-details">
+            <select className="sort-select">
 
-              <div className="name-line">
+              <option>Recommended</option>
 
-                <h2>
+              <option>Recently Active</option>
 
-                  {profile.name}, {profile.age}
+              <option>Newest Profiles</option>
 
-                </h2>
+              <option>Age: Low to High</option>
 
-                <span className="online"></span>
+              <option>Age: High to Low</option>
 
-              </div>
+            </select>
 
-              <p className="profession">
+          </div>
 
-                {profile.profession}
+        </section>
 
-              </p>
 
-              <p className="location">
+        {/* PROFILE GRID */}
 
-                ♧ &nbsp;{profile.location}
+        <section className="profile-grid">
 
-              </p>
+          {profiles.map((profile) => (
 
-              <div className="short-info">
+            <article
+              className="match-card"
+              key={profile._id}
+            >
 
-                <span>{profile.education}</span>
+              {/* IMAGE */}
 
-                <span>{profile.community}</span>
+              <div className="match-image">
 
-              </div>
+                <img
+                  src={`http://localhost:3300/upload/${profile.image}`}
+                  alt={profile.name}
+                />
 
-              <div className="card-bottom">
+                {profile.verified && (
 
-                <span className="profile-status">
+                  <span className="verified">
+                    ✓ Verified
+                  </span>
 
-                  {profile.verified
+                )}
 
-                    ? "Profile Verified"
-
-                    : "New Profile"}
-
-                </span>
-
-                <button className="view-profile" onClick={()=> navigate(`/profiledetail/${profile._id}`)}>
-
-                  View Profile →
-
+                <button className="heart-button">
+                  ♡
                 </button>
 
               </div>
 
-            </div>
 
-          </article>
+              {/* DETAILS */}
 
-        ))}
+              <div className="match-details">
 
-      </section>
+                <div className="name-line">
 
-      {/* PAGINATION */}
+                  <h2>
+                    {profile.name}, {profile.age}
+                  </h2>
 
-      <div className="pagination">
+                  <span className="online"></span>
 
-        <button>←</button>
+                </div>
 
-        <button className="page-active">1</button>
 
-        <button>2</button>
+                <p className="profession">
+                  {profile.profession}
+                </p>
 
-        <button>3</button>
 
-        <button>4</button>
+                <p className="location">
+                  ♧ &nbsp;{profile.location}
+                </p>
 
-        <button>5</button>
 
-        <button>→</button>
+                <div className="short-info">
 
-      </div>
+                  <span>
+                    {profile.education}
+                  </span>
 
-      {/* FILTER DRAWER */}
+                  <span>
+                    {profile.community}
+                  </span>
 
-      {filterOpen && (
+                </div>
 
-        <div
 
-          className="filter-backdrop"
+                <div className="card-bottom">
 
-          onClick={() => setFilterOpen(false)}
+                  <span className="profile-status">
 
-        >
+                    {profile.verified
+                      ? "Profile Verified"
+                      : "New Profile"}
 
-          <aside
+                  </span>
 
-            className="filter-drawer"
 
-            onClick={(e) => e.stopPropagation()}
+                  <button
+                    className="view-profile"
+                    onClick={() =>
+                      navigate(
+                        `/profiledetail/${profile._id}`
+                      )
+                    }
+                  >
+                    View Profile →
+                  </button>
 
-          >
-
-            <div className="drawer-header">
-
-              <div>
-
-                <p>REFINE SEARCH</p>
-
-                <h2>Filters</h2>
-
-              </div>
-
-              <button
-
-                onClick={() => setFilterOpen(false)}
-
-              >
-
-                ×
-
-              </button>
-
-            </div>
-
-            <div className="filter-content">
-
-              <label>Age Range</label>
-
-              <div className="age-inputs">
-
-                <input placeholder="21" />
-
-                <span>to</span>
-
-                <input placeholder="30" />
+                </div>
 
               </div>
 
-              <label>Height</label>
+            </article>
 
-              <select>
+          ))}
 
-                <option>Select Height</option>
+        </section>
 
-                <option>5'0" - 5'4"</option>
 
-                <option>5'5" - 5'8"</option>
+        {/* PAGINATION */}
 
-                <option>5'9" - 6'0"</option>
+        <div className="pagination">
 
-                <option>6'0"+</option>
+          <button>←</button>
 
-              </select>
+          <button className="page-active">
+            1
+          </button>
 
-              <label>Religion</label>
+          <button>2</button>
 
-              <select>
+          <button>3</button>
 
-                <option>Any Religion</option>
+          <button>4</button>
 
-                <option>Hindu</option>
+          <button>5</button>
 
-                <option>Muslim</option>
-
-                <option>Sikh</option>
-
-                <option>Christian</option>
-
-              </select>
-
-              <label>Community</label>
-
-              <select>
-
-                <option>Any Community</option>
-
-                <option>General</option>
-
-                <option>OBC</option>
-
-                <option>SC</option>
-
-                <option>ST</option>
-
-              </select>
-
-              <label>Education</label>
-
-              <select>
-
-                <option>Any Education</option>
-
-                <option>Graduate</option>
-
-                <option>Post Graduate</option>
-
-                <option>Doctorate</option>
-
-              </select>
-
-              <label>Profession</label>
-
-              <select>
-
-                <option>Any Profession</option>
-
-                <option>Engineer</option>
-
-                <option>Doctor</option>
-
-                <option>Teacher</option>
-
-                <option>Business</option>
-
-              </select>
-
-              <label>Marital Status</label>
-
-              <select>
-
-                <option>Never Married</option>
-
-                <option>Divorced</option>
-
-                <option>Widowed</option>
-
-              </select>
-
-              <div className="check-options">
-
-                <label className="check-label">
-
-                  <input type="checkbox" />
-
-                  Verified Profiles Only
-
-                </label>
-
-                <label className="check-label">
-
-                  <input type="checkbox" />
-
-                  Profiles With Photo
-
-                </label>
-
-              </div>
-
-            </div>
-
-            <div className="drawer-footer">
-
-              <button className="reset-button">
-
-                Reset
-
-              </button>
-
-              <button className="apply-button">
-
-                Apply Filters
-
-              </button>
-
-            </div>
-
-          </aside>
+          <button>→</button>
 
         </div>
 
-      )}
 
-    </main>
-  </>
- )
+        {/* FILTER DRAWER */}
+
+        {filterOpen && (
+
+          <div
+            className="filter-backdrop"
+            onClick={() => setFilterOpen(false)}
+          >
+
+            <aside
+              className="filter-drawer"
+              onClick={(e) => e.stopPropagation()}
+            >
+
+              <div className="drawer-header">
+
+                <div>
+
+                  <p>REFINE SEARCH</p>
+
+                  <h2>Filters</h2>
+
+                </div>
+
+                <button
+                  onClick={() => setFilterOpen(false)}
+                >
+                  ×
+                </button>
+
+              </div>
+
+
+              <div className="filter-content">
+
+                <label>Age Range</label>
+
+                <div className="age-inputs">
+
+                  <input placeholder="21" />
+
+                  <span>to</span>
+
+                  <input placeholder="30" />
+
+                </div>
+
+
+                <label>Height</label>
+
+                <select>
+
+                  <option>Select Height</option>
+
+                  <option>5'0" - 5'4"</option>
+
+                  <option>5'5" - 5'8"</option>
+
+                  <option>5'9" - 6'0"</option>
+
+                  <option>6'0"+</option>
+
+                </select>
+
+
+                <label>Religion</label>
+
+                <select>
+
+                  <option>Any Religion</option>
+
+                  <option>Hindu</option>
+
+                  <option>Muslim</option>
+
+                  <option>Sikh</option>
+
+                  <option>Christian</option>
+
+                </select>
+
+
+                <label>Community</label>
+
+                <select>
+
+                  <option>Any Community</option>
+
+                  <option>General</option>
+
+                  <option>OBC</option>
+
+                  <option>SC</option>
+
+                  <option>ST</option>
+
+                </select>
+
+
+                <label>Education</label>
+
+                <select>
+
+                  <option>Any Education</option>
+
+                  <option>Graduate</option>
+
+                  <option>Post Graduate</option>
+
+                  <option>Doctorate</option>
+
+                </select>
+
+
+                <label>Profession</label>
+
+                <select>
+
+                  <option>Any Profession</option>
+
+                  <option>Engineer</option>
+
+                  <option>Doctor</option>
+
+                  <option>Teacher</option>
+
+                  <option>Business</option>
+
+                </select>
+
+
+                <label>Marital Status</label>
+
+                <select>
+
+                  <option>Never Married</option>
+
+                  <option>Divorced</option>
+
+                  <option>Widowed</option>
+
+                </select>
+
+
+                <div className="check-options">
+
+                  <label className="check-label">
+
+                    <input type="checkbox" />
+
+                    Verified Profiles Only
+
+                  </label>
+
+
+                  <label className="check-label">
+
+                    <input type="checkbox" />
+
+                    Profiles With Photo
+
+                  </label>
+
+                </div>
+
+              </div>
+
+
+              <div className="drawer-footer">
+
+                <button className="reset-button">
+                  Reset
+                </button>
+
+                <button className="apply-button">
+                  Apply Filters
+                </button>
+
+              </div>
+
+            </aside>
+
+          </div>
+
+        )}
+
+      </main>
+    </>
+  );
 }
 
-export default FindMatches
-
+export default FindMatches;

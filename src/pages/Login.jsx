@@ -19,8 +19,18 @@ function Login() {
           e.preventDefault()
        console.log(login)
     const  res = await axios.post("http://localhost:3300/userLogin",login)
-       localStorage.setItem("token",res.data.token)
-       navigate("/createprofile")
+          if (res.data.role) {
+            if (res.data.role == "admin") {
+              localStorage.setItem("token",res.data.token)
+              navigate("/admin")
+            }else{
+               localStorage.setItem("token",res.data.token)
+               navigate("/myprofile")
+            }
+         }
+          else{
+            alert("user not found")
+          }     
   }
   return (
     <>
