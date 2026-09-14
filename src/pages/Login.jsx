@@ -15,23 +15,38 @@ function Login() {
         [e.target.name] : e.target.value
       })
   }
-  const handleSubmit = async(e)=>{
-          e.preventDefault()
-       console.log(login)
-    const  res = await axios.post("http://localhost:3300/userLogin",login)
-          if (res.data.role) {
-            if (res.data.role == "admin") {
-              localStorage.setItem("token",res.data.token)
-              navigate("/admin")
-            }else{
-               localStorage.setItem("token",res.data.token)
-               navigate("/myprofile")
-            }
-         }
-          else{
-            alert("user not found")
-          }     
+ const handleSubmit = async (e) => {
+  e.preventDefault();
+
+  try {
+    const res = await axios.post(
+      "http://localhost:3300/userLogin",
+      login
+    );
+
+    console.log(res.data);
+
+    if (res.data.role) {
+      localStorage.setItem("token", res.data.token);
+
+      if (res.data.role === "admin") {
+        navigate("/admin");
+      } else {
+        navigate("/myprofile");
+      }
+    } else {
+      alert("User not found");
+    }
+
+  } catch (err) {
+    console.log(err);
+
+    alert(
+      err.response?.data?.message ||
+      "User not found "
+    );
   }
+};
   return (
     <>
     <div className="login-container">

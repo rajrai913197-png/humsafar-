@@ -4,27 +4,25 @@ import { useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 
 function FindMatches() {
-
   const token = localStorage.getItem("token");
-
   const decoded = token ? jwtDecode(token) : null;
 
   const navigate = useNavigate();
 
   const [profiles, setProfiles] = useState([]);
   const [filterOpen, setFilterOpen] = useState(false);
+  const [selectedProfile, setSelectedProfile] = useState(null);
+  const [interestSent, setInterestSent] = useState({});
+  const [interestSuccess, setInterestSuccess] = useState(false);
 
   const GetUser = () => {
-
-    axios.get("http://localhost:3300/getUser")
+    axios
+      .get("http://localhost:3300/getUser")
       .then((res) => {
-
-        // Logged-in user ki ID
         const myId = decoded?.userId;
 
         console.log("My ID:", myId);
 
-        // Apni profile ko remove karo
         const otherProfiles = res.data.filter(
           (profile) => profile._id !== myId
         );
@@ -40,11 +38,60 @@ function FindMatches() {
     GetUser();
   }, []);
 
+  const handleInterest = (profile) => {
+    if (interestSent[profile._id]) {
+      return;
+    }
+
+    setSelectedProfile(profile);
+    setInterestSuccess(false);
+  };
+
+  const sendInterest = () => {
+    if (!decoded?.userId || !selectedProfile?._id) {
+      return;
+    }
+
+    axios
+      .post("http://localhost:3300/sendInterest", {
+        sender: decoded.userId,
+        receiver: selectedProfile._id,
+      })
+      .then((res) => {
+        console.log(res.data);
+
+        setInterestSent((prev) => ({
+          ...prev,
+          [selectedProfile._id]: true,
+        }));
+
+        setInterestSuccess(true);
+      })
+      .catch((err) => {
+        console.log(err);
+
+        if (
+          err.response?.data?.message ===
+          "Interest already sent"
+        ) {
+          setInterestSent((prev) => ({
+            ...prev,
+            [selectedProfile._id]: true,
+          }));
+
+          setInterestSuccess(true);
+        }
+      });
+  };
+
+  const closeInterestPopup = () => {
+    setSelectedProfile(null);
+    setInterestSuccess(false);
+  };
+
   return (
     <>
       <main className="find-page">
-
-        {/* PAGE HEADER */}
 
         <section className="find-header">
 
@@ -67,8 +114,6 @@ function FindMatches() {
 
         </section>
 
-
-        {/* TOOLBAR */}
 
         <section className="find-toolbar">
 
@@ -117,8 +162,6 @@ function FindMatches() {
         </section>
 
 
-        {/* PROFILE GRID */}
-
         <section className="profile-grid">
 
           {profiles.map((profile) => (
@@ -128,12 +171,14 @@ function FindMatches() {
               key={profile._id}
             >
 
-              {/* IMAGE */}
-
               <div className="match-image">
 
                 <img
-                  src={`http://localhost:3300/upload/${profile.image}`}
+                  src={
+                    profile.image
+                      ? `http://localhost:3300/upload/${profile.image}`
+                      : "https://i.pravatar.cc/500?img=47"
+                  }
                   alt={profile.name}
                 />
 
@@ -145,14 +190,25 @@ function FindMatches() {
 
                 )}
 
-                <button className="heart-button">
-                  ♡
+                <button
+                  className="heart-button"
+                  onClick={()=> {if (!token) {
+                     navigate("/login")
+                  }else{
+                    handleInterest(profile)
+                    
+                  }
+                  
+                }}
+                 
+                  
+                  disabled={interestSent[profile._id]}
+                >
+                  {interestSent[profile._id] ? "♥" : "♡"}
                 </button>
 
               </div>
 
-
-              {/* DETAILS */}
 
               <div className="match-details">
 
@@ -168,23 +224,28 @@ function FindMatches() {
 
 
                 <p className="profession">
-                  {profile.profession}
+                  {profile.profession || "Profession not added"}
                 </p>
 
 
                 <p className="location">
-                  ♧ &nbsp;{profile.location}
+                  ♧ &nbsp;
+                  {profile.city ||
+                    profile.location ||
+                    "Location not added"}
                 </p>
 
 
                 <div className="short-info">
 
                   <span>
-                    {profile.education}
+                    {profile.education || "Education"}
                   </span>
 
                   <span>
-                    {profile.community}
+                    {profile.community ||
+                      profile.religion ||
+                      "Community"}
                   </span>
 
                 </div>
@@ -223,8 +284,6 @@ function FindMatches() {
         </section>
 
 
-        {/* PAGINATION */}
-
         <div className="pagination">
 
           <button>←</button>
@@ -246,7 +305,110 @@ function FindMatches() {
         </div>
 
 
-        {/* FILTER DRAWER */}
+        {selectedProfile && (
+
+          <div
+            className="interest-backdrop"
+            onClick={closeInterestPopup}
+          >
+
+            <div
+              className="interest-popup"
+              onClick={(e) => e.stopPropagation()}
+            >
+
+              <button
+                className="interest-close"
+                onClick={closeInterestPopup}
+              >
+                ×
+              </button>
+
+
+              {!interestSuccess ? (
+
+                <>
+                  <div className="interest-popup-icon">
+                    ♡
+                  </div>
+
+                  <h2>
+                    Send Interest?
+                  </h2>
+
+                  <p>
+                    Would you like to send an interest to
+                  </p>
+
+                  <h3>
+                    {selectedProfile.name}
+                  </h3>
+
+                  <p className="interest-popup-text">
+                    Show your interest and start a meaningful
+                    connection.
+                  </p>
+
+                  <div className="interest-popup-actions">
+
+                    <button
+                      className="cancel-interest"
+                      onClick={closeInterestPopup}
+                    >
+                      Cancel
+                    </button>
+
+                    <button
+                      className="send-interest"
+                      onClick={sendInterest}
+                    >
+                      Send Interest ♥
+                    </button>
+
+                  </div>
+                </>
+
+              ) : (
+
+                <>
+                  <div className="interest-success-icon">
+                    ✓
+                  </div>
+
+                  <h2>
+                    Interest Sent!
+                  </h2>
+
+                  <p>
+                    Your interest has been sent successfully
+                    to
+                  </p>
+
+                  <h3>
+                    {selectedProfile.name}
+                  </h3>
+
+                  <p className="interest-popup-text">
+                    We'll let you know if they accept your
+                    interest.
+                  </p>
+
+                  <button
+                    className="send-interest"
+                    onClick={closeInterestPopup}
+                  >
+                    Done
+                  </button>
+                </>
+
+              )}
+
+            </div>
+
+          </div>
+
+        )}
+
 
         {filterOpen && (
 

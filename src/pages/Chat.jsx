@@ -1,342 +1,940 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import axios from "axios";
+import { io } from "socket.io-client";
+import { jwtDecode } from "jwt-decode";
+import { useNavigate, useParams } from "react-router-dom";
 
-const conversations = [
-  {
-    id: 1,
-    name: "Ananya Sharma",
-    image: "https://i.pravatar.cc/150?img=47",
-    lastMessage: "Hey, how are you?",
-    time: "10:42 PM",
-    unread: 2,
-    online: true,
-  },
-  {
-    id: 2,
-    name: "Riya Verma",
-    image: "https://i.pravatar.cc/150?img=44",
-    lastMessage: "Nice to connect with you!",
-    time: "9:15 PM",
-    unread: 0,
-    online: true,
-  },
-  {
-    id: 3,
-    name: "Kavya Patel",
-    image: "https://i.pravatar.cc/150?img=49",
-    lastMessage: "Would love to know more about you.",
-    time: "8:20 PM",
-    unread: 0,
-    online: false,
-  },
-  {
-    id: 4,
-    name: "Sneha Mehta",
-    image: "https://i.pravatar.cc/150?img=45",
-    lastMessage: "Have a wonderful evening!",
-    time: "Yesterday",
-    unread: 0,
-    online: false,
-  },
-];
-
-const messages = [
-  {
-    id: 1,
-    text: "Hi! It's nice to connect with you.",
-    sender: "other",
-    time: "10:38 PM",
-  },
-  {
-    id: 2,
-    text: "Hey Ananya, nice to connect with you too 😊",
-    sender: "me",
-    time: "10:40 PM",
-  },
-  {
-    id: 3,
-    text: "How are you doing?",
-    sender: "other",
-    time: "10:41 PM",
-  },
-  {
-    id: 4,
-    text: "I'm doing great! How about you?",
-    sender: "me",
-    time: "10:42 PM",
-  },
-  {
-    id: 5,
-    text: "I'm good too. Looking forward to knowing you better.",
-    sender: "other",
-    time: "10:43 PM",
-  },
-];
-
-const Chat= () => {
-  const [selectedChat, setSelectedChat] = useState(conversations[0]);
+const Chat = () => {
+  const [selectedChat, setSelectedChat] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [connections, setConnections] = useState([]);
   const [message, setMessage] = useState("");
   const [search, setSearch] = useState("");
   const [mobileChat, setMobileChat] = useState(false);
+  const [onlineUsers, setOnlineUsers] = useState([]);
 
-  const filteredChats = conversations.filter((chat) =>
-    chat.name.toLowerCase().includes(search.toLowerCase())
-  );
+  const socketRef = useRef(null);
 
-  const sendMessage = () => {
-    if (!message.trim()) return;
+  const { userId: receiverId } = useParams();
 
-    setMessage("");
+  const navigate = useNavigate();
+
+  // ==============================
+  // GET LOGGED IN USER ID
+  // ==============================
+
+  const token = localStorage.getItem("token");
+
+  let myId = null;
+
+  if (token) {
+    try {
+      const decoded = jwtDecode(token);
+
+      myId = decoded.userId;
+
+      console.log("MY USER ID:", myId);
+    } catch (error) {
+      console.log("INVALID TOKEN:", error);
+    }
+  }
+
+  // ==============================
+  // IMAGE
+  // ==============================
+
+  const getImage = (person) => {
+    if (!person?.image) {
+      return "https://i.pravatar.cc/150";
+    }
+
+    if (person.image.startsWith("http")) {
+      return person.image;
+    }
+
+    return `http://localhost:3300/upload/${person.image}`;
+  };
+
+  // ==============================
+  // GET CONNECTIONS
+  // ==============================
+
+  const getConnections = async () => {
+    if (!myId) {
+      console.log("MY ID NOT FOUND");
+      return;
+    }
+
+    try {
+      console.log(
+        "GETTING CONNECTIONS FOR:",
+        myId
+      );
+
+      const res = await axios.get(
+        `http://localhost:3300/myConnections/${myId}`
+      );
+
+      console.log(
+        "CONNECTION RESPONSE:",
+        res.data
+      );
+
+      const data =
+        res.data.connections || [];
+
+      console.log(
+        "CONNECTIONS:",
+        data
+      );
+
+      setConnections(data);
+    } catch (error) {
+      console.log(
+        "CONNECTION ERROR:",
+        error.response?.data ||
+          error.message
+      );
+    }
+  };
+
+  // ==============================
+  // CONNECTIONS ON LOAD
+  // ==============================
+
+  useEffect(() => {
+    if (!myId) {
+      return;
+    }
+
+    getConnections();
+  }, [myId]);
+
+  // ==============================
+  // GET SELECTED USER
+  // ==============================
+
+  useEffect(() => {
+    if (!receiverId) {
+      setSelectedChat(null);
+      setMessages([]);
+      setMobileChat(false);
+
+      return;
+    }
+
+    const getSelectedUser = async () => {
+      try {
+        console.log(
+          "GET SELECTED USER:",
+          receiverId
+        );
+
+        const res = await axios.get(
+          `http://localhost:3300/getUserBy/${receiverId}`
+        );
+
+        console.log(
+          "SELECTED USER RESPONSE:",
+          res.data
+        );
+
+        const user =
+          res.data.user ||
+          res.data.data ||
+          res.data;
+
+        console.log(
+          "SELECTED USER:",
+          user
+        );
+
+        setSelectedChat(user);
+
+        setMobileChat(true);
+      } catch (error) {
+        console.log(
+          "SELECTED USER ERROR:",
+          error.response?.data ||
+            error.message
+        );
+      }
+    };
+
+    getSelectedUser();
+  }, [receiverId]);
+
+  // ==============================
+  // GET OLD MESSAGES
+  // ==============================
+
+  useEffect(() => {
+    if (!myId || !receiverId) {
+      setMessages([]);
+      return;
+    }
+
+    const getMessages = async () => {
+      try {
+        console.log(
+          "GETTING MESSAGES:",
+          myId,
+          receiverId
+        );
+
+        const res = await axios.get(
+          `http://localhost:3300/messages/${myId}/${receiverId}`
+        );
+
+        console.log(
+          "MESSAGES RESPONSE:",
+          res.data
+        );
+
+        setMessages(
+          res.data.messages || []
+        );
+      } catch (error) {
+        console.log(
+          "MESSAGES ERROR:",
+          error.response?.data ||
+            error.message
+        );
+      }
+    };
+
+    getMessages();
+  }, [myId, receiverId]);
+
+  // ==============================
+  // SOCKET
+  // ==============================
+
+  useEffect(() => {
+    if (!myId) {
+      return;
+    }
+
+    console.log(
+      "STARTING SOCKET..."
+    );
+
+    const socket = io(
+      "http://localhost:3300"
+    );
+
+    socketRef.current = socket;
+
+    socket.on("connect", () => {
+      console.log(
+        "SOCKET CONNECTED:",
+        socket.id
+      );
+
+      console.log(
+        "JOINING ROOM:",
+        String(myId)
+      );
+
+      socket.emit(
+        "joinUser",
+        String(myId)
+      );
+    });
+
+    socket.on(
+      "onlineUsers",
+      (users) => {
+        console.log(
+          "ONLINE USERS:",
+          users
+        );
+
+        setOnlineUsers(
+          (users || []).map((id) =>
+            String(id)
+          )
+        );
+      }
+    );
+
+    socket.on(
+      "receiveMessage",
+      (data) => {
+        console.log(
+          "🔥 MESSAGE RECEIVED:",
+          data
+        );
+
+        const senderId = String(
+          data.sender?._id ||
+            data.sender
+        );
+
+        const receiver = String(
+          data.receiver?._id ||
+            data.receiver
+        );
+
+        const currentUser =
+          String(myId);
+
+        const currentChat =
+          String(receiverId);
+
+        if (
+          senderId === currentChat &&
+          receiver === currentUser
+        ) {
+          setMessages((prev) => {
+            const alreadyExists =
+              prev.some(
+                (msg) =>
+                  String(msg._id) ===
+                  String(data._id)
+              );
+
+            if (alreadyExists) {
+              return prev;
+            }
+
+            return [
+              ...prev,
+              data
+            ];
+          });
+        }
+      }
+    );
+
+    socket.on(
+      "connect_error",
+      (error) => {
+        console.log(
+          "SOCKET ERROR:",
+          error.message
+        );
+      }
+    );
+
+    socket.on(
+      "disconnect",
+      (reason) => {
+        console.log(
+          "SOCKET DISCONNECTED:",
+          reason
+        );
+      }
+    );
+
+    return () => {
+      socket.disconnect();
+      socketRef.current = null;
+    };
+  }, [myId, receiverId]);
+
+  // ==============================
+  // SEND MESSAGE
+  // ==============================
+
+  const sendMessage = async () => {
+    if (!message.trim()) {
+      return;
+    }
+
+    if (!myId) {
+      console.log(
+        "MY ID NOT FOUND"
+      );
+
+      return;
+    }
+
+    if (!receiverId) {
+      console.log(
+        "RECEIVER ID NOT FOUND"
+      );
+
+      return;
+    }
+
+    const text =
+      message.trim();
+
+    const messageData = {
+      sender: String(myId),
+      receiver: String(receiverId),
+      message: text,
+    };
+
+    try {
+      console.log(
+        "SENDING:",
+        messageData
+      );
+
+      const res = await axios.post(
+        "http://localhost:3300/sendMessage",
+        messageData
+      );
+
+      console.log(
+        "MESSAGE SAVED:",
+        res.data
+      );
+
+      const savedMessage =
+        res.data.data;
+
+      setMessages((prev) => {
+        const exists =
+          prev.some(
+            (msg) =>
+              String(msg._id) ===
+              String(
+                savedMessage._id
+              )
+          );
+
+        if (exists) {
+          return prev;
+        }
+
+        return [
+          ...prev,
+          savedMessage
+        ];
+      });
+
+      if (
+        socketRef.current &&
+        socketRef.current.connected
+      ) {
+        console.log(
+          "EMITTING MESSAGE:",
+          savedMessage
+        );
+
+        socketRef.current.emit(
+          "sendMessage",
+          savedMessage
+        );
+      }
+
+      setMessage("");
+    } catch (error) {
+      console.log(
+        "SEND MESSAGE ERROR:",
+        error.response?.data ||
+          error.message
+      );
+    }
+  };
+
+  // ==============================
+  // ENTER SEND
+  // ==============================
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter") {
+      sendMessage();
+    }
+  };
+
+  // ==============================
+  // OPEN CHAT
+  // ==============================
+
+  const openChat = (id) => {
+    navigate(
+      `/messages/${id}`
+    );
+  };
+
+  // ==============================
+  // BACK
+  // ==============================
+
+  const goBack = () => {
+    navigate("/messages");
+
+    setMobileChat(false);
+    setSelectedChat(null);
+    setMessages([]);
+  };
+
+  // ==============================
+  // PROFILE
+  // ==============================
+
+  const viewProfile = () => {
+    if (!receiverId) {
+      return;
+    }
+
+    navigate(
+      `/profiledetail/${receiverId}`
+    );
+  };
+
+  // ==============================
+  // SEARCH
+  // ==============================
+
+  const filteredConnections =
+    connections.filter((person) =>
+      person?.name
+        ?.toLowerCase()
+        .includes(
+          search.toLowerCase()
+        )
+    );
+
+  // ==============================
+  // ONLINE
+  // ==============================
+
+  const isOnline = (id) => {
+    return onlineUsers.includes(
+      String(id)
+    );
   };
 
   return (
     <main className="messages-page">
 
-      {/* PAGE HEADER */}
-      <div className="messages-heading">
+      {/* ================= HEADER ================= */}
+
+      <section className="messages-heading">
+
         <div>
-          <p>YOUR CONVERSATIONS</p>
+          <p>
+            YOUR CONVERSATIONS
+          </p>
+
           <h1>
-            Messages <span>&</span> Connections
+            Messages{" "}
+            <span>
+              & Connections
+            </span>
           </h1>
         </div>
 
         <div className="message-count">
-          <strong>4</strong>
-          <small>Conversations</small>
+
+          <strong>
+            {connections.length}
+          </strong>
+
+          <small>
+            CONNECTIONS
+          </small>
+
         </div>
-      </div>
 
+      </section>
 
-      {/* CHAT CONTAINER */}
+      {/* ================= CHAT CONTAINER ================= */}
+
       <section className="chat-container">
 
         {/* ================= LEFT ================= */}
+
         <aside
           className={`conversation-panel ${
-            mobileChat ? "hide-mobile" : ""
+            mobileChat
+              ? "hide-mobile"
+              : ""
           }`}
         >
 
           <div className="conversation-header">
-            <h2>Conversations</h2>
 
-            <button className="new-message-btn">
+            <h2>
+              Conversations
+            </h2>
+
+            <button
+              className="new-message-btn"
+              onClick={() =>
+                setSearch("")
+              }
+            >
               +
             </button>
+
           </div>
 
-
-          {/* SEARCH */}
           <div className="chat-search">
-            <span>⌕</span>
+
+            <span>
+              ⌕
+            </span>
 
             <input
               type="text"
               placeholder="Search conversations..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) =>
+                setSearch(
+                  e.target.value
+                )
+              }
             />
+
           </div>
 
-
-          {/* CHAT LIST */}
           <div className="conversation-list">
 
-            {filteredChats.map((chat) => (
+            {filteredConnections.length ===
+            0 ? (
 
-              <div
-                key={chat.id}
-                className={`conversation ${
-                  selectedChat.id === chat.id
-                    ? "selected-conversation"
-                    : ""
-                }`}
-                onClick={() => {
-                  setSelectedChat(chat);
-                  setMobileChat(true);
-                }}
-              >
+              <div className="empty-chat-list">
 
-                <div className="conversation-image">
+                <h3>
+                  No conversations
+                </h3>
 
-                  <img
-                    src={chat.image}
-                    alt={chat.name}
-                  />
-
-                  {chat.online && (
-                    <span className="online-dot"></span>
-                  )}
-
-                </div>
-
-
-                <div className="conversation-info">
-
-                  <div className="conversation-top">
-                    <h3>{chat.name}</h3>
-                    <span>{chat.time}</span>
-                  </div>
-
-                  <div className="conversation-bottom">
-
-                    <p>{chat.lastMessage}</p>
-
-                    {chat.unread > 0 && (
-                      <b>{chat.unread}</b>
-                    )}
-
-                  </div>
-
-                </div>
+                <p>
+                  Accept a connection
+                  to start chatting.
+                </p>
 
               </div>
 
-            ))}
+            ) : (
+
+              filteredConnections.map(
+                (person) => (
+
+                  <div
+                    key={person._id}
+                    className={`conversation ${
+                      String(
+                        receiverId
+                      ) ===
+                      String(
+                        person._id
+                      )
+                        ? "selected-conversation"
+                        : ""
+                    }`}
+                    onClick={() =>
+                      openChat(
+                        person._id
+                      )
+                    }
+                  >
+
+                    <div className="conversation-image">
+
+                      <img
+                        src={getImage(
+                          person
+                        )}
+                        alt={
+                          person.name
+                        }
+                      />
+
+                      {isOnline(
+                        person._id
+                      ) && (
+                        <span className="online-dot"></span>
+                      )}
+
+                    </div>
+
+                    <div className="conversation-info">
+
+                      <div className="conversation-top">
+
+                        <h3>
+                          {person.name}
+                        </h3>
+
+                      </div>
+
+                      <div className="conversation-bottom">
+
+                        <p>
+                          {person.profession ||
+                            "Start a conversation"}
+                        </p>
+
+                      </div>
+
+                    </div>
+
+                  </div>
+
+                )
+              )
+
+            )}
 
           </div>
 
         </aside>
 
+        {/* ================= RIGHT CHAT ================= */}
 
-        {/* ================= RIGHT ================= */}
-        <section
-          className={`chat-window ${
-            !mobileChat ? "mobile-empty" : ""
-          }`}
-        >
+        <section className="chat-window">
 
-          {/* CHAT HEADER */}
-          <header className="chat-header">
+          {!selectedChat ? (
 
-            <button
-              className="back-button"
-              onClick={() => setMobileChat(false)}
-            >
-              ←
-            </button>
+            <div className="chat-empty-screen">
 
-
-            <div className="chat-user-image">
-
-              <img
-                src={selectedChat.image}
-                alt={selectedChat.name}
-              />
-
-              {selectedChat.online && (
-                <span className="chat-online"></span>
-              )}
-
-            </div>
-
-
-            <div className="chat-user-info">
-
-              <h2>{selectedChat.name}</h2>
-
-              <p>
-                {selectedChat.online
-                  ? "● Online"
-                  : "Last seen recently"}
-              </p>
-
-            </div>
-
-
-            <button className="more-button">
-              ⋮
-            </button>
-
-          </header>
-
-
-          {/* CHAT BODY */}
-          <div className="chat-body">
-
-            <div className="date-divider">
-              <span>Today</span>
-            </div>
-
-
-            <div className="conversation-start">
-
-              <div className="small-profile">
-
-                <img
-                  src={selectedChat.image}
-                  alt={selectedChat.name}
-                />
-
+              <div>
+                💬
               </div>
 
-              <h3>{selectedChat.name}</h3>
+              <h2>
+                Start a conversation
+              </h2>
 
               <p>
-                You matched with {selectedChat.name}.
+                Select one of your
+                connections to start
+                chatting.
               </p>
-
-              <span>Start getting to know each other.</span>
 
             </div>
 
+          ) : (
 
-            {/* MESSAGES */}
-            <div className="messages-list">
+            <>
 
-              {messages.map((msg) => (
+              {/* ================= CHAT HEADER ================= */}
 
-                <div
-                  key={msg.id}
-                  className={`message-row ${
-                    msg.sender === "me"
-                      ? "my-message"
-                      : "other-message"
-                  }`}
+              <header className="chat-header">
+
+                <button
+                  className="back-button"
+                  onClick={goBack}
                 >
+                  ←
+                </button>
 
-                  <div className="message-bubble">
-                    <p>{msg.text}</p>
+                <div className="chat-user-image">
 
-                    <span>
-                      {msg.time}
-                      {msg.sender === "me" && " ✓✓"}
-                    </span>
-                  </div>
+                  <img
+                    src={getImage(
+                      selectedChat
+                    )}
+                    alt={
+                      selectedChat.name
+                    }
+                  />
+
+                  {isOnline(
+                    selectedChat._id
+                  ) && (
+                    <span className="chat-online"></span>
+                  )}
 
                 </div>
 
-              ))}
+                <div
+                  className="chat-user-info"
+                  onClick={
+                    viewProfile
+                  }
+                >
 
-            </div>
+                  <h2>
+                    {selectedChat.name}
+                  </h2>
 
-          </div>
+                  <p>
+                    {isOnline(
+                      selectedChat._id
+                    )
+                      ? "Online"
+                      : "Offline"}
+                  </p>
 
+                </div>
 
-          {/* MESSAGE INPUT */}
-          <div className="message-input-area">
+                <button
+                  className="more-button"
+                  onClick={
+                    viewProfile
+                  }
+                >
+                  ⋮
+                </button>
 
-            <button className="emoji-button">
-              ☺
-            </button>
+              </header>
 
-            <input
-              type="text"
-              placeholder="Write a message..."
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  sendMessage();
-                }
-              }}
-            />
+              {/* ================= BODY ================= */}
 
-            <button className="send-button" onClick={sendMessage}>
-              ➤
-            </button>
+              <div className="chat-body">
 
-          </div>
+                <div className="date-divider">
+                  <span>
+                    TODAY
+                  </span>
+                </div>
+
+                <div className="conversation-start">
+
+                  <div className="small-profile">
+
+                    <img
+                      src={getImage(
+                        selectedChat
+                      )}
+                      alt={
+                        selectedChat.name
+                      }
+                    />
+
+                  </div>
+
+                  <h3>
+                    {selectedChat.name}
+                  </h3>
+
+                  <p>
+                    {selectedChat.profession ||
+                      "Your connection"}
+                  </p>
+
+                  <span>
+                    You are now connected.
+                    Start your conversation.
+                  </span>
+
+                </div>
+
+                <div className="messages-list">
+
+                  {messages.length ===
+                  0 ? (
+
+                    <div className="no-messages">
+
+                      <p>
+                        No messages yet
+                      </p>
+
+                      <span>
+                        Say hello 👋
+                      </span>
+
+                    </div>
+
+                  ) : (
+
+                    messages.map(
+                      (msg) => {
+
+                        const senderId =
+                          String(
+                            msg.sender?._id ||
+                              msg.sender
+                          );
+
+                        const mine =
+                          senderId ===
+                          String(
+                            myId
+                          );
+
+                        return (
+                          <div
+                            key={
+                              msg._id
+                            }
+                            className={`message-row ${
+                              mine
+                                ? "my-message"
+                                : "other-message"
+                            }`}
+                          >
+
+                            <div className="message-bubble">
+
+                              <p>
+                                {
+                                  msg.message
+                                }
+                              </p>
+
+                              <span>
+                                {msg.createdAt
+                                  ? new Date(
+                                      msg.createdAt
+                                    ).toLocaleTimeString(
+                                      [],
+                                      {
+                                        hour:
+                                          "2-digit",
+                                        minute:
+                                          "2-digit",
+                                      }
+                                    )
+                                  : ""}
+                              </span>
+
+                            </div>
+
+                          </div>
+                        );
+                      }
+                    )
+
+                  )}
+
+                </div>
+
+              </div>
+
+              {/* ================= INPUT ================= */}
+
+              <div className="message-input-area">
+
+                <button
+                  className="emoji-button"
+                  onClick={() =>
+                    setMessage(
+                      (prev) =>
+                        prev + " ❤️"
+                    )
+                  }
+                >
+                  ☺
+                </button>
+
+                <input
+                  type="text"
+                  placeholder="Write a message..."
+                  value={message}
+                  onChange={(e) =>
+                    setMessage(
+                      e.target.value
+                    )
+                  }
+                  onKeyDown={
+                    handleKeyDown
+                  }
+                />
+
+                <button
+                  className="send-button"
+                  onClick={
+                    sendMessage
+                  }
+                >
+                  ➤
+                </button>
+
+              </div>
+
+            </>
+
+          )}
 
         </section>
 
@@ -347,4 +945,3 @@ const Chat= () => {
 };
 
 export default Chat;
-

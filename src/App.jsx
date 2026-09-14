@@ -21,7 +21,8 @@ function App() {
      <Route path="home" element= {<Home />} />
      <Route path="findmatches" element = {<FindMatches />} />
      <Route path="interests" element = {<Interests />} />
-      <Route path="messages" element = {<Chat />} />
+      <Route path="messages/:userId" element={<Chat />} />
+      <Route path="messages" element={<Chat />} />
       <Route path="notification" element = {<Notifications />} />
       <Route path="myprofile" element = {
         <ProfileProtect >

@@ -1,340 +1,429 @@
-import { useState } from "react";
-const received = [
-  {
-    id: 1,
-    name: "Ananya Sharma",
-    age: 26,
-    profession: "Software Engineer",
-    location: "Bhopal, Madhya Pradesh",
-    image: "https://i.pravatar.cc/500?img=47",
-    verified: true,
-  },
-  {
-    id: 2,
-    name: "Riya Verma",
-    age: 25,
-    profession: "Architect",
-    location: "Indore, Madhya Pradesh",
-    image: "https://i.pravatar.cc/500?img=44",
-    verified: true,
-  },
-  {
-    id: 3,
-    name: "Kavya Patel",
-    age: 27,
-    profession: "Doctor",
-    location: "Mumbai, Maharashtra",
-    image: "https://i.pravatar.cc/500?img=49",
-    verified: true,
-  },
-];
-
-const sent = [
-  {
-    id: 4,
-    name: "Sneha Mehta",
-    age: 24,
-    profession: "Marketing Manager",
-    location: "Delhi, India",
-    image: "https://i.pravatar.cc/500?img=45",
-    status: "Pending",
-  },
-  {
-    id: 5,
-    name: "Pooja Singh",
-    age: 28,
-    profession: "HR Manager",
-    location: "Pune, Maharashtra",
-    image: "https://i.pravatar.cc/500?img=32",
-    status: "Accepted",
-  },
-];
-
-const matches = [
-  {
-    id: 6,
-    name: "Meera Joshi",
-    age: 26,
-    profession: "Teacher",
-    location: "Jaipur, Rajasthan",
-    image: "https://i.pravatar.cc/500?img=25",
-  },
-  {
-    id: 7,
-    name: "Priya Kapoor",
-    age: 27,
-    profession: "Product Manager",
-    location: "Mumbai, Maharashtra",
-    image: "https://i.pravatar.cc/500?img=48",
-  },
-];
+import { useEffect, useState } from "react";
+import axios from "axios";
+import { jwtDecode } from "jwt-decode";
+import { useNavigate } from "react-router-dom";
 
 const Interests = () => {
   const [activeTab, setActiveTab] = useState("received");
+  const [received, setReceived] = useState([]);
+  const [matches, setMatches] = useState([]);
+
+  const navigate = useNavigate();
+
+  const token = localStorage.getItem("token");
+
+  let userId = null;
+
+  if (token) {
+    try {
+      const decoded = jwtDecode(token);
+      userId = decoded.userId;
+    } catch (error) {
+      console.log("Invalid token",error);
+    }
+  }
+
+  const getReceivedInterests = () => {
+    if (!userId) return;
+
+    axios
+      .get(`http://localhost:3300/receivedInterests/${userId}`)
+      .then((res) => {
+        console.log("Received:", res.data);
+        setReceived(res.data.interests);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  };
+
+  const getConnections = () => {
+    if (!userId) return;
+
+    axios
+      .get(`http://localhost:3300/myConnections/${userId}`)
+      .then((res) => {
+        console.log("Connections:", res.data);
+        setMatches(res.data.connections);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  };
+
+  useEffect(() => {
+    getReceivedInterests();
+    getConnections();
+  }, [userId]);
+
+  const handleAccept = (interestId) => {
+    axios
+      .put(`http://localhost:3300/acceptInterest/${interestId}`)
+      .then((res) => {
+        console.log(res.data);
+
+        setReceived((prev) =>
+          prev.filter((item) => item._id !== interestId)
+        );
+
+        getConnections();
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  };
+
+  const handleReject = (interestId) => {
+    axios
+      .put(`http://localhost:3300/rejectInterest/${interestId}`)
+      .then((res) => {
+        console.log(res.data);
+
+        setReceived((prev) =>
+          prev.filter((item) => item._id !== interestId)
+        );
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  };
+
+  const viewProfile = (id) => {
+    navigate(`/profiledetail/${id}`);
+  };
+
+  const openChat = (id) => {
+    navigate(`/messages/${id}`);
+  };
 
   return (
     <>
-    <main className="interests-page">
+      <main className="interests-page">
 
-      {/* HEADER */}
-      <section className="interests-header">
-        <p>YOUR CONNECTIONS</p>
+        <section className="interests-header">
+          <p>YOUR CONNECTIONS</p>
 
-        <h1>
-          Interests & <span>Matches</span>
-        </h1>
+          <h1>
+            Interests & <span>Matches</span>
+          </h1>
 
-        <h4>
-          Manage the people who have shown interest in
-          connecting with you.
-        </h4>
-      </section>
-
-
-      {/* STATS */}
-      <section className="interest-stats">
-
-        <div
-          className={`stat-card ${
-            activeTab === "received" ? "active-stat" : ""
-          }`}
-          onClick={() => setActiveTab("received")}
-        >
-          <span className="stat-icon">♡</span>
-          <div>
-            <strong>12</strong>
-            <p>Received Interests</p>
-          </div>
-        </div>
+          <h4>
+            Manage the people who have shown interest in
+            connecting with you.
+          </h4>
+        </section>
 
 
-        <div
-          className={`stat-card ${
-            activeTab === "sent" ? "active-stat" : ""
-          }`}
-          onClick={() => setActiveTab("sent")}
-        >
-          <span className="stat-icon">↑</span>
-          <div>
-            <strong>8</strong>
-            <p>Sent Interests</p>
-          </div>
-        </div>
+        <section className="interest-stats">
 
+          <div
+            className={`stat-card ${
+              activeTab === "received" ? "active-stat" : ""
+            }`}
+            onClick={() => setActiveTab("received")}
+          >
+            <span className="stat-icon">♡</span>
 
-        <div
-          className={`stat-card ${
-            activeTab === "matches" ? "active-stat" : ""
-          }`}
-          onClick={() => setActiveTab("matches")}
-        >
-          <span className="stat-icon">✦</span>
-          <div>
-            <strong>4</strong>
-            <p>Mutual Matches</p>
-          </div>
-        </div>
-
-      </section>
-
-
-      {/* CONTENT */}
-      <section className="interest-content">
-
-        {/* RECEIVED */}
-        {activeTab === "received" && (
-          <>
-            <div className="content-heading">
-              <div>
-                <p>PEOPLE INTERESTED IN YOU</p>
-                <h2>Received Interests</h2>
-              </div>
-
-              <span>12 requests</span>
+            <div>
+              <strong>{received.length}</strong>
+              <p>Received Interests</p>
             </div>
+          </div>
 
-            <div className="interest-list">
 
-              {received.map((person) => (
-                <div className="interest-card" key={person.id}>
+          <div
+            className={`stat-card ${
+              activeTab === "sent" ? "active-stat" : ""
+            }`}
+            onClick={() => setActiveTab("sent")}
+          >
+            <span className="stat-icon">↑</span>
 
-                  <img
-                    src={person.image}
-                    alt={person.name}
-                  />
+            <div>
+              <strong>0</strong>
+              <p>Sent Interests</p>
+            </div>
+          </div>
 
-                  <div className="interest-info">
 
-                    <div className="interest-name">
-                      <h3>
-                        {person.name}, {person.age}
-                      </h3>
+          <div
+            className={`stat-card ${
+              activeTab === "matches" ? "active-stat" : ""
+            }`}
+            onClick={() => setActiveTab("matches")}
+          >
+            <span className="stat-icon">✦</span>
 
-                      {person.verified && (
-                        <span className="verified-small">
-                          ✓ Verified
-                        </span>
-                      )}
-                    </div>
+            <div>
+              <strong>{matches.length}</strong>
+              <p>Mutual Matches</p>
+            </div>
+          </div>
 
-                    <p className="person-profession">
-                      {person.profession}
-                    </p>
+        </section>
 
-                    <p className="person-location">
-                      ♧ &nbsp;{person.location}
-                    </p>
 
-                  </div>
+        <section className="interest-content">
 
-                  <div className="interest-actions">
-                    <button className="view-btn">
-                      View Profile
-                    </button>
+          {activeTab === "received" && (
+            <>
+              <div className="content-heading">
 
-                    <button className="accept-btn">
-                      Accept
-                    </button>
-
-                    <button className="decline-btn">
-                      Decline
-                    </button>
-                  </div>
-
+                <div>
+                  <p>PEOPLE INTERESTED IN YOU</p>
+                  <h2>Received Interests</h2>
                 </div>
-              ))}
 
-            </div>
-          </>
-        )}
+                <span>
+                  {received.length} requests
+                </span>
 
-
-        {/* SENT */}
-        {activeTab === "sent" && (
-          <>
-            <div className="content-heading">
-              <div>
-                <p>PEOPLE YOU'VE SHOWN INTEREST IN</p>
-                <h2>Sent Interests</h2>
               </div>
 
-              <span>8 requests</span>
-            </div>
 
-            <div className="interest-list">
+              <div className="interest-list">
 
-              {sent.map((person) => (
-                <div className="interest-card" key={person.id}>
+                {received.length === 0 ? (
 
-                  <img
-                    src={person.image}
-                    alt={person.name}
-                  />
-
-                  <div className="interest-info">
-
-                    <div className="interest-name">
-                      <h3>
-                        {person.name}, {person.age}
-                      </h3>
-                    </div>
-
-                    <p className="person-profession">
-                      {person.profession}
+                  <div className="empty-interest">
+                    <h3>No pending interests</h3>
+                    <p>
+                      You don't have any new interest requests right now.
                     </p>
-
-                    <p className="person-location">
-                      ♧ &nbsp;{person.location}
-                    </p>
-
                   </div>
 
-                  <div className="interest-actions">
+                ) : (
 
-                    <span
-                      className={`status ${person.status.toLowerCase()}`}
+                  received.map((item) => {
+
+                    const person = item.sender;
+
+                    return (
+                      <div
+                        className="interest-card"
+                        key={item._id}
+                      >
+
+                        <img
+                          src={
+                            person?.image
+                              ? `http://localhost:3300/upload/${person.image}`
+                              : "https://i.pravatar.cc/500?img=47"
+                          }
+                          alt={person?.name}
+                        />
+
+
+                        <div className="interest-info">
+
+                          <div className="interest-name">
+
+                            <h3>
+                              {person?.name},{" "}
+                              {person?.age || ""}
+                            </h3>
+
+                          </div>
+
+
+                          <p className="person-profession">
+                            {person?.profession ||
+                              "Profession not added"}
+                          </p>
+
+
+                          <p className="person-location">
+                            ♧ &nbsp;
+                            {person?.city ||
+                              "Location not added"}
+                          </p>
+
+                        </div>
+
+
+                        <div className="interest-actions">
+
+                          <button
+                            className="view-btn"
+                            onClick={() =>
+                              viewProfile(person?._id)
+                            }
+                          >
+                            View Profile
+                          </button>
+
+
+                          <button
+                            className="accept-btn"
+                            onClick={() =>
+                              handleAccept(item._id)
+                            }
+                          >
+                            Accept
+                          </button>
+
+
+                          <button
+                            className="decline-btn"
+                            onClick={() =>
+                              handleReject(item._id)
+                            }
+                          >
+                            Decline
+                          </button>
+
+                        </div>
+
+                      </div>
+                    );
+                  })
+
+                )}
+
+              </div>
+            </>
+          )}
+
+
+          {activeTab === "sent" && (
+            <>
+              <div className="content-heading">
+
+                <div>
+                  <p>PEOPLE YOU'VE SHOWN INTEREST IN</p>
+                  <h2>Sent Interests</h2>
+                </div>
+
+                <span>0 requests</span>
+
+              </div>
+
+
+              <div className="interest-list">
+
+                <div className="empty-interest">
+                  <h3>Sent Interests</h3>
+                  <p>
+                    Your sent interest requests will appear here.
+                  </p>
+                </div>
+
+              </div>
+            </>
+          )}
+
+
+          {activeTab === "matches" && (
+            <>
+              <div className="content-heading">
+
+                <div>
+                  <p>MUTUAL CONNECTIONS</p>
+                  <h2>Your Matches</h2>
+                </div>
+
+                <span>
+                  {matches.length} matches
+                </span>
+
+              </div>
+
+
+              <div className="matches-grid">
+
+                {matches.length === 0 ? (
+
+                  <div className="empty-interest">
+                    <h3>No matches yet</h3>
+                    <p>
+                      Accepted interests will appear here.
+                    </p>
+                  </div>
+
+                ) : (
+
+                  matches.map((person) => (
+
+                    <div
+                      className="match-interest-card"
+                      key={person._id}
                     >
-                      {person.status}
-                    </span>
 
-                    <button className="view-btn">
-                      View Profile
-                    </button>
+                      <div className="match-photo">
 
-                  </div>
+                        <img
+                          src={
+                            person.image
+                              ? `http://localhost:3300/upload/${person.image}`
+                              : "https://i.pravatar.cc/500?img=25"
+                          }
+                          alt={person.name}
+                        />
 
-                </div>
-              ))}
+                        <span>✦ Match</span>
 
-            </div>
-          </>
-        )}
+                      </div>
 
 
-        {/* MATCHES */}
-        {activeTab === "matches" && (
-          <>
-            <div className="content-heading">
-              <div>
-                <p>MUTUAL CONNECTIONS</p>
-                <h2>Your Matches</h2>
-              </div>
+                      <div className="match-info">
 
-              <span>4 matches</span>
-            </div>
+                        <h3>
+                          {person.name},{" "}
+                          {person.age || ""}
+                        </h3>
 
-            <div className="matches-grid">
 
-              {matches.map((person) => (
-                <div className="match-interest-card" key={person.id}>
+                        <p>
+                          {person.profession ||
+                            "Profession not added"}
+                        </p>
 
-                  <div className="match-photo">
 
-                    <img
-                      src={person.image}
-                      alt={person.name}
-                    />
+                        <small>
+                          ♧ &nbsp;
+                          {person.city ||
+                            "Location not added"}
+                        </small>
 
-                    <span>✦ Match</span>
 
-                  </div>
+                        <div className="match-actions">
 
-                  <div className="match-info">
+                          <button
+                            className="view-btn"
+                            onClick={() =>
+                              viewProfile(person._id)
+                            }
+                          >
+                            View Profile
+                          </button>
 
-                    <h3>
-                      {person.name}, {person.age}
-                    </h3>
 
-                    <p>{person.profession}</p>
+                          <button
+                            className="message-btn"
+                            onClick={() =>
+                              openChat(person._id)
+                            }
+                          >
+                            Message
+                          </button>
 
-                    <small>
-                      ♧ &nbsp;{person.location}
-                    </small>
+                        </div>
 
-                    <div className="match-actions">
-
-                      <button className="view-btn">
-                        View Profile
-                      </button>
-
-                      <button className="message-btn">
-                        Message
-                      </button>
+                      </div>
 
                     </div>
 
-                  </div>
+                  ))
 
-                </div>
-              ))}
+                )}
 
-            </div>
-          </>
-        )}
+              </div>
+            </>
+          )}
 
-      </section>
+        </section>
 
-    </main>
+      </main>
     </>
   );
 };
