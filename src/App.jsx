@@ -20,15 +20,27 @@ function App() {
      <Route   index element={<Home />} />
      <Route path="home" element= {<Home />} />
      <Route path="findmatches" element = {<FindMatches />} />
-     <Route path="interests" element = {<Interests />} />
-      <Route path="messages/:userId" element={<Chat />} />
-      <Route path="messages" element={<Chat />} />
-      <Route path="notification" element = {<Notifications />} />
-      <Route path="myprofile" element = {
-        <ProfileProtect >
-            <Myprofile />
-        </ProfileProtect>
+     <Route path="interests" element = {
+      <ProfileProtect >
+        <Interests />
+      </ProfileProtect>
+     
       } />
+      <Route path="messages/:userId" element={<Chat />} />
+      <Route path="messages" element={
+        <ProfileProtect >
+          <Chat />
+        </ProfileProtect>
+       
+      }
+         />
+      <Route path="notification" element = {
+          <ProfileProtect >
+           <Notifications />
+          </ProfileProtect>
+       }
+         />
+      
       <Route path="createprofile" element = {<CreateProfile />} />
       <Route path="profiledetail/:id" element = {<ProfilesDetails />} />
       <Route path="signup" element ={<SignUp />} />
@@ -36,6 +48,11 @@ function App() {
       
     
      </Route>
+     <Route path="myprofile" element = {
+        <ProfileProtect >
+            <Myprofile />
+        </ProfileProtect>
+      } />
        <Route path = "admin" element = {
         <ProfileProtect >
            <Admin />

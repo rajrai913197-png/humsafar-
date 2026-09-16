@@ -1,24 +1,139 @@
-import { useState } from "react";
+import axios from "axios";
+import { useEffect, useState } from "react";
+import { jwtDecode } from "jwt-decode";
+import { useNavigate } from "react-router-dom";
 
 const MyProfile = () => {
+  const navigate = useNavigate();
+
   const [menuOpen, setMenuOpen] = useState(false);
-  const [optionsOpen, setOptionsOpen] = useState(false);
+  const [profile, setProfile] = useState({});
+
+  const token = localStorage.getItem("token");
+
+  let id = null;
+
+  try {
+    if (token) {
+      const decoded = jwtDecode(token);
+      id = decoded?.userId;
+    }
+  } catch (error) {
+    console.log("TOKEN DECODE ERROR:", error);
+    localStorage.removeItem("token");
+    navigate("/login");
+  }
+
+  // ================================
+  // GET PROFILE
+  // ================================
+
+  const getProfile = async () => {
+    if (!id) return;
+
+    try {
+      const res = await axios.get(
+        `http://localhost:3300/getProfile/${id}`
+      );
+
+      console.log("PROFILE DATA:", res.data);
+
+      setProfile(res.data);
+    } catch (error) {
+      console.log("GET PROFILE ERROR:", error);
+    }
+  };
+
+  useEffect(() => {
+    getProfile();
+  }, []);
+
+  // ================================
+  // NAVIGATION
+  // ================================
+
+  const goTo = (path) => {
+    setMenuOpen(false);
+    navigate(path);
+  };
+
+  // ================================
+  // LOGOUT
+  // ================================
+
+  const logout = () => {
+    localStorage.removeItem("token");
+    navigate("/login");
+  };
+
+  // ================================
+  // PROFILE COMPLETENESS
+  // ================================
+
+  const profileFields = [
+    profile.name,
+    profile.age,
+    profile.gender,
+    profile.city,
+    profile.education,
+    profile.profession,
+    profile.religion,
+    profile.bio,
+    profile.image,
+    profile.fatherName,
+    profile.motherName,
+    profile.siblings,
+    profile.familyBackground,
+  ];
+
+  const completedFields = profileFields.filter(
+    (field) =>
+      field !== undefined &&
+      field !== null &&
+      field !== ""
+  ).length;
+
+  const completeness = Math.round(
+    (completedFields / profileFields.length) * 100
+  );
 
   return (
     <main className="my-profile-page">
 
-      {/* MOBILE OVERLAY */}
+      {/* =================================
+          BACK BUTTON
+      ================================= */}
+
+      <button
+        type="button"
+        className="my-profile-back-btn"
+        onClick={() => navigate(-1)}
+      >
+        ← Back 
+      </button>
+
+      {/* =================================
+          SIDEBAR OVERLAY
+      ================================= */}
+
       {menuOpen && (
         <div
           className="profile-overlay"
           onClick={() => setMenuOpen(false)}
-        ></div>
+        />
       )}
 
+      {/* =================================
+          SIDEBAR
+      ================================= */}
 
-      {/* ================= MOBILE SLIDER ================= */}
+      <aside
+        className={`profile-sidebar ${
+          menuOpen ? "show" : ""
+        }`}
+      >
 
-      <aside className={`profile-sidebar ${menuOpen ? "show" : ""}`}>
+        {/* SIDEBAR HEADER */}
 
         <div className="sidebar-header">
 
@@ -30,7 +145,10 @@ const MyProfile = () => {
 
             <div>
               <h3>Sapta Vachan</h3>
-              <p>Seven vows. One lifetime.</p>
+
+              <p>
+                Seven vows. One lifetime.
+              </p>
             </div>
 
           </div>
@@ -38,75 +156,161 @@ const MyProfile = () => {
           <button
             className="close-sidebar"
             onClick={() => setMenuOpen(false)}
+            aria-label="Close menu"
           >
             ×
           </button>
 
         </div>
 
+        {/* SIDEBAR USER */}
 
-        {/* USER */}
         <div className="sidebar-profile">
 
           <div className="sidebar-avatar">
-            R
+
+            {profile.image ? (
+              <img
+                src={`http://localhost:3300/upload/${profile.image}`}
+                alt={profile.name || "Profile"}
+              />
+            ) : (
+              profile.name
+                ? profile.name.charAt(0).toUpperCase()
+                : "U"
+            )}
+
           </div>
 
           <div>
-            <h4>Raj Rai</h4>
-            <span>My Profile</span>
+
+            <h4>
+              {profile.name || "Your Profile"}
+            </h4>
+
+            <span>
+              My Profile
+            </span>
+
           </div>
 
         </div>
 
+        {/* SIDEBAR NAVIGATION */}
 
-        {/* MENU */}
         <nav className="sidebar-menu">
 
-          <button>
-            ⌂ <span>Home</span>
+          <button
+            onClick={() => goTo("/home")}
+          >
+            <span className="sidebar-icon">
+              ⌂
+            </span>
+
+            <span>
+              Home
+            </span>
           </button>
 
-          <button>
-            ♡ <span>Find Matches</span>
+          <button
+            onClick={() => goTo("/findmatches")}
+          >
+            <span className="sidebar-icon">
+              ♡
+            </span>
+
+            <span>
+              Find Matches
+            </span>
           </button>
 
-          <button>
-            ♥ <span>Interests</span>
+          <button
+            onClick={() => goTo("/interests")}
+          >
+            <span className="sidebar-icon">
+              ♥
+            </span>
+
+            <span>
+              Interests
+            </span>
           </button>
 
-          <button>
-            ✉ <span>Messages</span>
+          <button
+            onClick={() => goTo("/messages")}
+          >
+            <span className="sidebar-icon">
+              ✉
+            </span>
+
+            <span>
+              Messages
+            </span>
           </button>
 
-          <button>
-            ♢ <span>Notifications</span>
+          <button
+            onClick={() => goTo("/notification")}
+          >
+            <span className="sidebar-icon">
+              ♢
+            </span>
+
+            <span>
+              Notifications
+            </span>
           </button>
 
-          <button className="active">
-            ♙ <span>My Profile</span>
+          <button
+            className="active"
+            onClick={() => goTo("/myprofile")}
+          >
+            <span className="sidebar-icon">
+              ♙
+            </span>
+
+            <span>
+              My Profile
+            </span>
           </button>
 
-          <button>
-            ⚙ <span>Settings</span>
+          <button
+            onClick={() => goTo("/settings")}
+          >
+            <span className="sidebar-icon">
+              ⚙
+            </span>
+
+            <span>
+              Settings
+            </span>
           </button>
 
         </nav>
 
-
         {/* LOGOUT */}
-        <button className="logout-btn">
-          ↪ <span>Logout</span>
+
+        <button
+          className="logout-btn"
+          onClick={logout}
+        >
+          <span>
+            ↪
+          </span>
+
+          <span>
+            Logout
+          </span>
         </button>
 
       </aside>
 
-
-      {/* ================= DESKTOP / MOBILE HEADER ================= */}
+      {/* =================================
+          PAGE HEADER
+      ================================= */}
 
       <header className="profile-header">
 
-        <div>
+        <div className="profile-heading">
 
           <p className="eyebrow">
             YOUR PROFILE
@@ -116,65 +320,33 @@ const MyProfile = () => {
             My Profile
           </h1>
 
-          <span className="header-subtitle">
+          <p className="header-subtitle">
             Your story deserves to be beautifully told.
-          </span>
+          </p>
 
         </div>
 
-
         <div className="header-actions">
 
-          {/* ONLY ONE EDIT BUTTON */}
-          <button className="edit-btn">
-            ✎ Edit Profile
+          {/* EDIT PROFILE */}
+
+          <button
+            className="edit-btn"
+            onClick={() => navigate("/createprofile")}
+          >
+            <span>
+              ✎
+            </span>
+
+            Edit Profile
           </button>
 
+          {/* MY PROFILE HAMBURGER */}
 
-          {/* DESKTOP OPTIONS */}
-          <div className="options-wrapper">
-
-            <button
-              className="options-btn"
-              onClick={() => setOptionsOpen(!optionsOpen)}
-            >
-              ⋯
-            </button>
-
-
-            {optionsOpen && (
-
-              <div className="options-dropdown">
-
-                <button>
-                  ⚙ Settings
-                </button>
-
-                <button>
-                  🔒 Privacy
-                </button>
-
-                <button>
-                  ❓ Help & Support
-                </button>
-
-                <hr />
-
-                <button className="dropdown-logout">
-                  ↪ Logout
-                </button>
-
-              </div>
-
-            )}
-
-          </div>
-
-
-          {/* MOBILE MENU */}
           <button
             className="menu-btn"
             onClick={() => setMenuOpen(true)}
+            aria-label="Open menu"
           >
             ☰
           </button>
@@ -183,15 +355,29 @@ const MyProfile = () => {
 
       </header>
 
-
-      {/* ================= PROFILE HERO ================= */}
+      {/* =================================
+          PROFILE HERO
+      ================================= */}
 
       <section className="profile-hero">
 
         <div className="profile-photo-wrapper">
 
           <div className="profile-photo">
-            R
+
+            {profile.image ? (
+              <img
+                src={`http://localhost:3300/upload/${profile.image}`}
+                alt={profile.name || "Profile"}
+              />
+            ) : (
+              <span>
+                {profile.name
+                  ? profile.name.charAt(0).toUpperCase()
+                  : "U"}
+              </span>
+            )}
+
           </div>
 
           <span className="verified">
@@ -200,7 +386,6 @@ const MyProfile = () => {
 
         </div>
 
-
         <div className="hero-info">
 
           <p className="hero-label">
@@ -208,38 +393,50 @@ const MyProfile = () => {
           </p>
 
           <h2>
-            Raj Rai
+            {profile.name || "Your Name"}
           </h2>
 
           <div className="basic-info">
 
-            <span>22 Years</span>
+            <span>
+              {profile.age || "-"} Years
+            </span>
 
-            <span>•</span>
+            <i>
+              •
+            </i>
 
-            <span>Male</span>
+            <span>
+              {profile.gender || "-"}
+            </span>
 
-            <span>•</span>
+            <i>
+              •
+            </i>
 
-            <span>Bhopal</span>
+            <span>
+              {profile.city || "-"}
+            </span>
 
           </div>
-
 
           <div className="hero-details">
 
             <span>
-              🎓 B.Sc Computer Science
+              <b>🎓</b>
+              {profile.education ||
+                "Education not added"}
             </span>
 
             <span>
-              💼 Full Stack Developer
+              <b>💼</b>
+              {profile.profession ||
+                "Profession not added"}
             </span>
 
           </div>
 
-
-          {/* PROFILE COMPLETION */}
+          {/* COMPLETENESS */}
 
           <div className="completion">
 
@@ -250,14 +447,19 @@ const MyProfile = () => {
               </span>
 
               <strong>
-                85%
+                {completeness}%
               </strong>
 
             </div>
 
             <div className="progress">
 
-              <div className="progress-fill"></div>
+              <div
+                className="progress-fill"
+                style={{
+                  width: `${completeness}%`,
+                }}
+              />
 
             </div>
 
@@ -267,8 +469,9 @@ const MyProfile = () => {
 
       </section>
 
-
-      {/* ================= ABOUT ================= */}
+      {/* =================================
+          ABOUT
+      ================================= */}
 
       <section className="profile-section">
 
@@ -279,29 +482,31 @@ const MyProfile = () => {
           </div>
 
           <div>
-            <p>GET TO KNOW ME</p>
-            <h2>About Me</h2>
+            <p>
+              GET TO KNOW ME
+            </p>
+
+            <h2>
+              About Me
+            </h2>
           </div>
 
         </div>
 
-
         <div className="about-card">
 
           <p>
-            I am a passionate and ambitious person who believes
-            in building meaningful relationships based on trust,
-            understanding and respect. I enjoy technology,
-            learning new things and spending quality time with
-            family.
+            {profile.bio ||
+              "Tell us something beautiful about yourself. Add a short introduction so people can know you better."}
           </p>
 
         </div>
 
       </section>
 
-
-      {/* ================= PERSONAL DETAILS ================= */}
+      {/* =================================
+          PERSONAL DETAILS
+      ================================= */}
 
       <section className="profile-section">
 
@@ -312,57 +517,66 @@ const MyProfile = () => {
           </div>
 
           <div>
-            <p>WHO I AM</p>
-            <h2>Personal Details</h2>
+            <p>
+              WHO I AM
+            </p>
+
+            <h2>
+              Personal Details
+            </h2>
           </div>
 
         </div>
-
 
         <div className="details-grid">
 
           <Detail
             icon="♙"
             label="Full Name"
-            value="Raj Rai"
+            value={profile.name}
           />
 
           <Detail
             icon="◷"
             label="Age"
-            value="22 Years"
+            value={
+              profile.age
+                ? `${profile.age} Years`
+                : "-"
+            }
           />
 
           <Detail
             icon="♢"
             label="Gender"
-            value="Male"
+            value={profile.gender}
           />
 
           <Detail
             icon="✦"
             label="Religion"
-            value="Hindu"
+            value={profile.religion}
           />
 
           <Detail
             icon="⌖"
             label="City"
-            value="Bhopal"
+            value={profile.city}
           />
 
           <Detail
             icon="✉"
             label="Email"
-            value="example@gmail.com"
+            value={profile.email}
           />
 
         </div>
 
       </section>
 
-
-      {/* ================= EDUCATION ================= */}
+      {/* =================================
+          EDUCATION & CAREER
+      ================================= */}
 
       <section className="profile-section">
 
@@ -373,33 +587,38 @@ const MyProfile = () => {
           </div>
 
           <div>
-            <p>MY JOURNEY</p>
-            <h2>Education & Career</h2>
+            <p>
+              MY JOURNEY
+            </p>
+
+            <h2>
+              Education & Career
+            </h2>
           </div>
 
         </div>
-
 
         <div className="details-grid">
 
           <Detail
             icon="🎓"
             label="Education"
-            value="B.Sc Computer Science"
+            value={profile.education}
           />
 
           <Detail
             icon="💼"
             label="Profession"
-            value="Full Stack Developer"
+            value={profile.profession}
           />
 
         </div>
 
       </section>
 
-
-      {/* ================= FAMILY ================= */}
+      {/* =================================
+          FAMILY DETAILS
+      ================================= */}
 
       <section className="profile-section">
 
@@ -410,37 +629,41 @@ const MyProfile = () => {
           </div>
 
           <div>
-            <p>MY ROOTS</p>
-            <h2>Family Details</h2>
+            <p>
+              MY ROOTS
+            </p>
+
+            <h2>
+              Family Details
+            </h2>
           </div>
 
         </div>
-
 
         <div className="details-grid">
 
           <Detail
             icon="♙"
             label="Father's Name"
-            value="Father Name"
+            value={profile.fatherName}
           />
 
           <Detail
             icon="♡"
             label="Mother's Name"
-            value="Mother Name"
+            value={profile.motherName}
           />
 
           <Detail
             icon="♧"
             label="Siblings"
-            value="2"
+            value={profile.siblings}
           />
 
           <Detail
             icon="✦"
             label="Family Background"
-            value="Educated & Respectable Family"
+            value={profile.familyBackground}
             wide
           />
 
@@ -448,8 +671,9 @@ const MyProfile = () => {
 
       </section>
 
-
-      {/* ================= ACCOUNT ================= */}
+      {/* =================================
+          ACCOUNT INFORMATION
+      ================================= */}
 
       <section className="profile-section">
 
@@ -460,12 +684,16 @@ const MyProfile = () => {
           </div>
 
           <div>
-            <p>ACCOUNT</p>
-            <h2>Account Information</h2>
+            <p>
+              ACCOUNT
+            </p>
+
+            <h2>
+              Account Information
+            </h2>
           </div>
 
         </div>
-
 
         <div className="account-card">
 
@@ -476,11 +704,10 @@ const MyProfile = () => {
             </span>
 
             <strong>
-              example@gmail.com
+              {profile.email || "-"}
             </strong>
 
           </div>
-
 
           <div>
 
@@ -498,9 +725,14 @@ const MyProfile = () => {
 
       </section>
 
+      {/* =================================
+          MOBILE EDIT BUTTON
+      ================================= */}
 
-      {/* MOBILE EDIT */}
-      <button className="mobile-edit-btn">
+      <button
+        className="mobile-edit-btn"
+        onClick={() => navigate("/createprofile")}
+      >
         ✎ Edit Profile
       </button>
 
@@ -509,13 +741,23 @@ const MyProfile = () => {
 };
 
 
-/* ================= DETAIL COMPONENT ================= */
+// ======================================
+// DETAIL COMPONENT
+// ======================================
 
-const Detail = ({ icon, label, value, wide }) => {
+const Detail = ({
+  icon,
+  label,
+  value,
+  wide,
+}) => {
 
   return (
-
-    <div className={`detail-card ${wide ? "wide" : ""}`}>
+    <div
+      className={`detail-card ${
+        wide ? "wide" : ""
+      }`}
+    >
 
       <div className="detail-icon">
         {icon}
@@ -528,15 +770,13 @@ const Detail = ({ icon, label, value, wide }) => {
         </span>
 
         <strong>
-          {value}
+          {value || "-"}
         </strong>
 
       </div>
 
     </div>
-
   );
 };
-
 
 export default MyProfile;

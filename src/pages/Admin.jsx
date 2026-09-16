@@ -1,258 +1,339 @@
-import { useEffect, useState } from "react"
-import { useNavigate } from "react-router-dom"
-import axios from "axios"
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
 function AdminPanel() {
- const [activeFilter, setActiveFilter] = useState("All")
-  const [search, setSearch] = useState("")
-  const [showAccount, setShowAccount] = useState(false)
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
-  const [users, setUsers] = useState([
-  
-  ])
+  const [users, setUsers] = useState([]);
+  const [activeFilter, setActiveFilter] = useState("All");
+  const [search, setSearch] = useState("");
+  const [showAccount, setShowAccount] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const getAllUsers = ()=>{
-     axios.get("http://localhost:3300/getalluser")
-     .then((res)=>setUsers(res.data))
-     .catch(err => console.log(err))
-  }
+  /* ================= GET USERS ================= */
 
- 
+  const getAllUsers = async () => {
+    try {
+      const res = await axios.get(
+        "http://localhost:3300/getalluser"
+      );
 
+      setUsers(res.data || []);
+    } catch (error) {
+      console.log("GET USERS ERROR:", error);
+    }
+  };
 
+  useEffect(() => {
+    getAllUsers();
+  }, []);
 
   /* ================= COUNTS ================= */
 
-  const totalUsers = users.length
+  const totalUsers = users.length;
 
   const maleUsers = users.filter(
-    user => user.gender === "Male"
-  ).length
+    (user) => user.gender === "Male"
+  ).length;
 
   const femaleUsers = users.filter(
-    user => user.gender === "Female"
-  ).length
+    (user) => user.gender === "Female"
+  ).length;
 
   const completeUsers = users.filter(
-    user => user.status === "Complete"
-  ).length
+    (user) => user.status === "Complete"
+  ).length;
 
   const incompleteUsers = users.filter(
-    user => user.status === "Incomplete"
-  ).length
-
+    (user) => user.status === "Incomplete"
+  ).length;
 
   /* ================= FILTER ================= */
 
   const filterUsers = (filter) => {
-    setActiveFilter(filter)
-  }
-
+    setActiveFilter(filter);
+    setSidebarOpen(false);
+  };
 
   /* ================= SEARCH + FILTER ================= */
 
   const filteredUsers = users.filter((user) => {
+    const name = user.name || "";
+    const email = user.email || "";
+    const city = user.city || "";
+
+    const searchValue = search.toLowerCase();
 
     const searchMatch =
-      user.name.toLowerCase().includes(search.toLowerCase()) ||
-      user.email.toLowerCase().includes(search.toLowerCase()) ||
-      user.city.toLowerCase().includes(search.toLowerCase())
+      name.toLowerCase().includes(searchValue) ||
+      email.toLowerCase().includes(searchValue) ||
+      city.toLowerCase().includes(searchValue);
 
-    let filterMatch = true
+    let filterMatch = true;
 
     if (activeFilter === "Male") {
-      filterMatch = user.gender === "Male"
+      filterMatch = user.gender === "Male";
     }
 
     if (activeFilter === "Female") {
-      filterMatch = user.gender === "Female"
+      filterMatch = user.gender === "Female";
     }
 
     if (activeFilter === "Complete") {
-      filterMatch = user.status === "Complete"
+      filterMatch = user.status === "Complete";
     }
 
     if (activeFilter === "Incomplete") {
-      filterMatch = user.status === "Incomplete"
+      filterMatch = user.status === "Incomplete";
     }
 
-    return searchMatch && filterMatch
-  })
-
+    return searchMatch && filterMatch;
+  });
 
   /* ================= DELETE ================= */
 
-  const deleteUser = (id) => {
-      axios.delete(`http://localhost:3300/deleteUser/${id}`)
-      .then(()=> alert("userDelete"))
-      .catch(err => console.log(err))
-  }
+  const deleteUser = async (id) => {
+    const confirmDelete = window.confirm(
+      "Are you sure you want to remove this user?"
+    );
 
+    if (!confirmDelete) return;
+
+    try {
+      await axios.delete(
+        `http://localhost:3300/deleteUser/${id}`
+      );
+
+      setUsers((prevUsers) =>
+        prevUsers.filter((user) => user._id !== id)
+      );
+
+      alert("User deleted successfully");
+    } catch (error) {
+      console.log("DELETE USER ERROR:", error);
+    }
+  };
 
   /* ================= VIEW USER ================= */
 
   const viewUser = (id) => {
-    navigate(`/profiledetail/${id}`)
-  }
-
+    navigate(`/profiledetail/${id}`);
+  };
 
   /* ================= LOGOUT ================= */
 
   const logout = () => {
+    localStorage.removeItem("token");
+    navigate("/");
+  };
 
-    localStorage.removeItem("token")
+  /* ================= SIDEBAR NAV ================= */
 
-    navigate("/")
-  }
- useEffect(()=>{
-  getAllUsers()
-},[deleteUser])
+  const goTo = (path) => {
+    setSidebarOpen(false);
+    setShowAccount(false);
+    navigate(path);
+  };
 
   return (
-
     <div className="admin-page">
 
+      {/* ================= SIDEBAR OVERLAY ================= */}
 
-      {/* ================= HEADER ================= */}
+      {sidebarOpen && (
+        <div
+          className="admin-overlay"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
 
-      <header className="admin-header">
+      {/* ================= SIDEBAR ================= */}
 
-        <div className="admin-brand">
+      <aside
+        className={`admin-sidebar ${
+          sidebarOpen ? "show" : ""
+        }`}
+      >
 
-          <span>SAPTA VACHAN</span>
+        {/* SIDEBAR BRAND */}
 
-          <h1>Admin Dashboard</h1>
+        <div className="admin-sidebar-header">
 
-        </div>
+          <div className="admin-sidebar-brand">
 
-
-        {/* ADMIN ACCOUNT */}
-
-        <div className="admin-account">
-
-          <div
-            className="admin-profile"
-            onClick={() => setShowAccount(!showAccount)}
-          >
-
-            <div className="admin-avatar">
-
-              <i className="fa-solid fa-user"></i>
-
+            <div className="admin-brand-circle">
+              स
             </div>
 
             <div>
-
-              <strong>Admin</strong>
-
-              <small>Administrator</small>
-
+              <h2>Sapta Vachan</h2>
+              <span>Admin Panel</span>
             </div>
-
-            <i className="fa-solid fa-chevron-down"></i>
 
           </div>
 
-
-          {/* ACCOUNT DROPDOWN */}
-
-          {showAccount && (
-
-            <div className="admin-dropdown">
-
-              <div className="dropdown-user">
-
-                <div className="dropdown-avatar">
-                  <i className="fa-solid fa-user"></i>
-                </div>
-
-                <div>
-
-                  <strong>Admin</strong>
-
-                  <small>Administrator</small>
-
-                </div>
-
-              </div>
-
-
-              <div className="dropdown-line"></div>
-
-
-              <button
-                onClick={() => navigate("/admin")}
-              >
-                <i className="fa-solid fa-chart-line"></i>
-                Dashboard
-              </button>
-
-
-              <button
-                onClick={() => navigate("/myprofile")}
-              >
-                <i className="fa-solid fa-user"></i>
-                My Profile
-              </button>
-
-
-              <div className="dropdown-line"></div>
-
-
-              <button
-                className="logout-btn"
-                onClick={logout}
-              >
-                <i className="fa-solid fa-right-from-bracket"></i>
-                Logout
-              </button>
-
-            </div>
-
-          )}
+          <button
+            className="admin-sidebar-close"
+            onClick={() => setSidebarOpen(false)}
+          >
+            ×
+          </button>
 
         </div>
 
-      </header>
+        {/* ADMIN PROFILE */}
 
+        <div className="admin-sidebar-profile">
 
-
-      {/* ================= MAIN ================= */}
-
-      <main className="admin-content">
-
-
-        {/* PAGE TITLE */}
-
-        <div className="dashboard-title">
+          <div className="admin-sidebar-avatar">
+            <i className="fa-solid fa-user"></i>
+          </div>
 
           <div>
+            <strong>Admin</strong>
+            <span>Administrator</span>
+          </div>
 
-            <p>DASHBOARD</p>
+        </div>
 
-            <h2>Overview</h2>
+        {/* NAVIGATION */}
+
+        <nav className="admin-sidebar-menu">
+
+          <button
+            className="active"
+            onClick={() => goTo("/admin")}
+          >
+            <i className="fa-solid fa-chart-line"></i>
+            <span>Dashboard</span>
+          </button>
+
+          <button
+            onClick={() => {
+              setActiveFilter("All");
+              setSidebarOpen(false);
+            }}
+          >
+            <i className="fa-solid fa-users"></i>
+            <span>All Users</span>
+          </button>
+
+          <button
+            onClick={() => {
+              setActiveFilter("Male");
+              setSidebarOpen(false);
+            }}
+          >
+            <i className="fa-solid fa-mars"></i>
+            <span>Male Users</span>
+          </button>
+
+          <button
+            onClick={() => {
+              setActiveFilter("Female");
+              setSidebarOpen(false);
+            }}
+          >
+            <i className="fa-solid fa-venus"></i>
+            <span>Female Users</span>
+          </button>
+
+          <button
+            onClick={() => goTo("/myprofile")}
+          >
+            <i className="fa-solid fa-user"></i>
+            <span>My Profile</span>
+          </button>
+
+          <button
+            onClick={() => goTo("/settings")}
+          >
+            <i className="fa-solid fa-gear"></i>
+            <span>Settings</span>
+          </button>
+
+        </nav>
+
+        {/* LOGOUT */}
+
+        <button
+          className="admin-sidebar-logout"
+          onClick={logout}
+        >
+          <i className="fa-solid fa-right-from-bracket"></i>
+          <span>Logout</span>
+        </button>
+
+      </aside>
+
+      {/* ================= TOP BAR ================= */}
+
+      <header className="admin-topbar">
+
+        <div className="admin-top-left">
+
+          <button
+            className="admin-menu-btn"
+            onClick={() => setSidebarOpen(true)}
+            aria-label="Open admin menu"
+          >
+            ☰
+          </button>
+
+          <div className="admin-mobile-brand">
+
+            <strong>
+              SAPTA VACHAN
+            </strong>
 
             <span>
-              Manage your matrimonial community from here.
+              Admin Dashboard
             </span>
 
           </div>
 
         </div>
 
+      
 
+      </header>
+
+      {/* ================= MAIN ================= */}
+
+      <main className="admin-content">
+
+        {/* PAGE TITLE */}
+
+        <div className="dashboard-title">
+
+          <div>
+            <p>DASHBOARD</p>
+
+            <h1>
+              Overview
+            </h1>
+
+            <span>
+              Manage your matrimonial community from here.
+            </span>
+          </div>
+
+        </div>
 
         {/* ================= WELCOME ================= */}
 
-        <div className="welcome-section">
+        <section className="welcome-section">
 
           <div>
 
-            <p>WELCOME BACK, ADMIN</p>
+            <p>
+              WELCOME BACK, ADMIN
+            </p>
 
             <h2>
-              Keep your community <em>meaningful.</em>
+              Keep your community{" "}
+              <em>meaningful.</em>
             </h2>
 
             <small>
@@ -262,138 +343,100 @@ function AdminPanel() {
 
           </div>
 
-
           <div className="welcome-icon">
 
             <i className="fa-solid fa-heart"></i>
 
           </div>
 
-        </div>
-
-
+        </section>
 
         {/* ================= STATS ================= */}
 
-        <div className="stats-grid">
-
-
-          {/* TOTAL */}
+        <section className="stats-grid">
 
           <div
-            className="stat-card clickable"
+            className={`stat-card clickable ${
+              activeFilter === "All"
+                ? "selected"
+                : ""
+            }`}
             onClick={() => filterUsers("All")}
           >
 
             <div className="stat-icon">
-
               <i className="fa-solid fa-users"></i>
-
             </div>
 
             <div>
-
               <span>Total Users</span>
-
               <h3>{totalUsers}</h3>
-
               <small>View all members →</small>
-
             </div>
 
           </div>
 
-
-
-          {/* MALE */}
-
           <div
-            className="stat-card clickable"
+            className={`stat-card clickable ${
+              activeFilter === "Male"
+                ? "selected"
+                : ""
+            }`}
             onClick={() => filterUsers("Male")}
           >
 
             <div className="stat-icon">
-
               <i className="fa-solid fa-mars"></i>
-
             </div>
 
             <div>
-
               <span>Men</span>
-
               <h3>{maleUsers}</h3>
-
               <small>View male profiles →</small>
-
             </div>
 
           </div>
 
-
-
-          {/* FEMALE */}
-
           <div
-            className="stat-card clickable"
+            className={`stat-card clickable ${
+              activeFilter === "Female"
+                ? "selected"
+                : ""
+            }`}
             onClick={() => filterUsers("Female")}
           >
 
             <div className="stat-icon">
-
               <i className="fa-solid fa-venus"></i>
-
             </div>
 
             <div>
-
               <span>Women</span>
-
               <h3>{femaleUsers}</h3>
-
               <small>View female profiles →</small>
-
             </div>
 
           </div>
 
-
-
-          {/* NEW */}
-
-          <div
-            className="stat-card clickable"
-            onClick={() => filterUsers("All")}
-          >
+          <div className="stat-card">
 
             <div className="stat-icon">
-
               <i className="fa-solid fa-user-plus"></i>
-
             </div>
 
             <div>
-
               <span>New Today</span>
-
               <h3>18</h3>
-
               <small>Recently joined →</small>
-
             </div>
 
           </div>
 
-        </div>
-
-
+        </section>
 
         {/* ================= USER MANAGEMENT ================= */}
 
         <section className="users-card">
-
-
-          {/* TOP */}
 
           <div className="users-top">
 
@@ -401,16 +444,15 @@ function AdminPanel() {
 
               <p>MEMBERS</p>
 
-              <h2>User Management</h2>
+              <h2>
+                User Management
+              </h2>
 
               <span>
                 {filteredUsers.length} members showing
               </span>
 
             </div>
-
-
-            {/* SEARCH */}
 
             <div className="search-box">
 
@@ -429,105 +471,57 @@ function AdminPanel() {
 
           </div>
 
-
-
           {/* FILTERS */}
 
           <div className="filter-row">
 
-            <button
-              className={
-                activeFilter === "All"
-                  ? "active-filter"
-                  : ""
-              }
-              onClick={() => filterUsers("All")}
-            >
-              All Users
-            </button>
+            {[
+              ["All", "All Users"],
+              ["Male", "Male"],
+              ["Female", "Female"],
+              ["Complete", "Complete"],
+              ["Incomplete", "Pending"],
+            ].map(([value, label]) => (
 
+              <button
+                key={value}
+                className={
+                  activeFilter === value
+                    ? "active-filter"
+                    : ""
+                }
+                onClick={() =>
+                  filterUsers(value)
+                }
+              >
+                {label}
+              </button>
 
-            <button
-              className={
-                activeFilter === "Male"
-                  ? "active-filter"
-                  : ""
-              }
-              onClick={() => filterUsers("Male")}
-            >
-              Male
-            </button>
-
-
-            <button
-              className={
-                activeFilter === "Female"
-                  ? "active-filter"
-                  : ""
-              }
-              onClick={() => filterUsers("Female")}
-            >
-              Female
-            </button>
-
-
-            <button
-              className={
-                activeFilter === "Complete"
-                  ? "active-filter"
-                  : ""
-              }
-              onClick={() => filterUsers("Complete")}
-            >
-              Complete
-            </button>
-
-
-            <button
-              className={
-                activeFilter === "Incomplete"
-                  ? "active-filter"
-                  : ""
-              }
-              onClick={() => filterUsers("Incomplete")}
-            >
-              Pending
-            </button>
+            ))}
 
           </div>
-
-
 
           {/* TABLE */}
 
           <div className="users-table">
 
-
             <div className="table-head">
 
               <span>User</span>
-
               <span>Email</span>
-
               <span>Gender</span>
-
               <span>City</span>
-
               <span>Status</span>
-
               <span>Action</span>
 
             </div>
 
-
-
-            {filteredUsers.map(user => (
+            {filteredUsers.map((user) => (
 
               <div
                 className="user-row"
-                key={user.id}
+                key={user._id}
               >
-
 
                 {/* USER */}
 
@@ -536,36 +530,32 @@ function AdminPanel() {
                   <div className="user-avatar">
 
                     {user.name
-                      .charAt(0)
-                      .toUpperCase()}
+                      ? user.name
+                          .charAt(0)
+                          .toUpperCase()
+                      : "U"}
 
                   </div>
 
                   <div>
 
                     <strong>
-                      {user.name}
+                      {user.name || "Unknown User"}
                     </strong>
 
                     <small>
-                      {user.age} years old
+                      {user.age || "-"} years old
                     </small>
 
                   </div>
 
                 </div>
 
-
-
                 {/* EMAIL */}
 
                 <span className="email">
-
-                  {user.email}
-
+                  {user.email || "-"}
                 </span>
-
-
 
                 {/* GENDER */}
 
@@ -579,11 +569,9 @@ function AdminPanel() {
                     }
                   ></i>
 
-                  {user.gender}
+                  {user.gender || "-"}
 
                 </span>
-
-
 
                 {/* CITY */}
 
@@ -591,11 +579,9 @@ function AdminPanel() {
 
                   <i className="fa-solid fa-location-dot"></i>
 
-                  {user.city}
+                  {user.city || "-"}
 
                 </span>
-
-
 
                 {/* STATUS */}
 
@@ -609,11 +595,9 @@ function AdminPanel() {
 
                   <i className="fa-solid fa-circle"></i>
 
-                  {user.status}
+                  {user.status || "Incomplete"}
 
                 </span>
-
-
 
                 {/* ACTION */}
 
@@ -622,22 +606,21 @@ function AdminPanel() {
                   <button
                     className="view-btn"
                     title="View Profile"
-                    onClick={() => viewUser(user._id)}
+                    onClick={() =>
+                      viewUser(user._id)
+                    }
                   >
-
                     <i className="fa-solid fa-eye"></i>
-
                   </button>
-
 
                   <button
                     className="delete-btn"
                     title="Remove User"
-                    onClick={() => deleteUser(user._id)}
+                    onClick={() =>
+                      deleteUser(user._id)
+                    }
                   >
-
                     <i className="fa-solid fa-trash"></i>
-
                   </button>
 
                 </div>
@@ -646,7 +629,7 @@ function AdminPanel() {
 
             ))}
 
-
+            {/* NO USERS */}
 
             {filteredUsers.length === 0 && (
 
@@ -654,7 +637,9 @@ function AdminPanel() {
 
                 <i className="fa-solid fa-user-slash"></i>
 
-                <h3>No users found</h3>
+                <h3>
+                  No users found
+                </h3>
 
                 <p>
                   Try another search or filter.
@@ -668,19 +653,13 @@ function AdminPanel() {
 
         </section>
 
-
-
-        {/* ================= BOTTOM ================= */}
+        {/* ================= BOTTOM GRID ================= */}
 
         <div className="bottom-grid">
 
+          {/* RECENT */}
 
-          {/* RECENT REGISTRATIONS */}
-
-          <div
-            className="bottom-card clickable-card"
-            onClick={() => filterUsers("All")}
-          >
+          <div className="bottom-card">
 
             <div className="bottom-title">
 
@@ -688,52 +667,54 @@ function AdminPanel() {
 
                 <p>RECENT</p>
 
-                <h3>New Registrations</h3>
+                <h3>
+                  New Registrations
+                </h3>
 
               </div>
 
               <div className="bottom-icon">
-
                 <i className="fa-solid fa-user-plus"></i>
-
               </div>
 
             </div>
 
-
             <div className="recent-list">
 
-              {users.slice(0, 4).map(user => (
+              {users.slice(0, 4).map((user) => (
 
                 <div
                   className="recent-user"
-                  key={user.id}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    viewUser(user.id)
-                  }}
+                  key={user._id}
+                  onClick={() =>
+                    viewUser(user._id)
+                  }
                 >
 
                   <div className="recent-avatar">
 
-                    {user.name.charAt(0)}
+                    {user.name
+                      ? user.name
+                          .charAt(0)
+                          .toUpperCase()
+                      : "U"}
 
                   </div>
 
                   <div>
 
                     <strong>
-                      {user.name}
+                      {user.name || "Unknown"}
                     </strong>
 
                     <small>
-                      {user.city}
+                      {user.city || "-"}
                     </small>
 
                   </div>
 
                   <span>
-                    {user.joined}
+                    New
                   </span>
 
                 </div>
@@ -744,9 +725,7 @@ function AdminPanel() {
 
           </div>
 
-
-
-          {/* COMMUNITY OVERVIEW */}
+          {/* COMMUNITY */}
 
           <div className="bottom-card">
 
@@ -756,7 +735,9 @@ function AdminPanel() {
 
                 <p>COMMUNITY</p>
 
-                <h3>Profile Overview</h3>
+                <h3>
+                  Profile Overview
+                </h3>
 
               </div>
 
@@ -768,78 +749,75 @@ function AdminPanel() {
 
             </div>
 
-
             <div className="activity-list">
 
-
               <div
-                onClick={() => filterUsers("All")}
+                onClick={() =>
+                  filterUsers("Complete")
+                }
               >
 
                 <span>
-
-                  <i className="fa-solid fa-user-plus"></i>
-
-                  New profiles today
-
-                </span>
-
-                <strong>18</strong>
-
-              </div>
-
-
-
-              <div
-                onClick={() => filterUsers("Complete")}
-              >
-
-                <span>
-
                   <i className="fa-solid fa-circle-check"></i>
-
                   Complete profiles
-
                 </span>
 
-                <strong>{completeUsers}</strong>
+                <strong>
+                  {completeUsers}
+                </strong>
 
               </div>
 
-
-
               <div
-                onClick={() => filterUsers("Incomplete")}
+                onClick={() =>
+                  filterUsers("Incomplete")
+                }
               >
 
                 <span>
-
                   <i className="fa-solid fa-user-clock"></i>
-
                   Pending profiles
-
                 </span>
 
-                <strong>{incompleteUsers}</strong>
+                <strong>
+                  {incompleteUsers}
+                </strong>
 
               </div>
 
-
-
-              <div>
+              <div
+                onClick={() =>
+                  filterUsers("Male")
+                }
+              >
 
                 <span>
-
-                  <i className="fa-solid fa-heart"></i>
-
-                  Community members
-
+                  <i className="fa-solid fa-mars"></i>
+                  Male members
                 </span>
 
-                <strong>{totalUsers}</strong>
+                <strong>
+                  {maleUsers}
+                </strong>
 
               </div>
 
+              <div
+                onClick={() =>
+                  filterUsers("Female")
+                }
+              >
+
+                <span>
+                  <i className="fa-solid fa-venus"></i>
+                  Female members
+                </span>
+
+                <strong>
+                  {femaleUsers}
+                </strong>
+
+              </div>
 
             </div>
 
@@ -850,7 +828,7 @@ function AdminPanel() {
       </main>
 
     </div>
-  )
+  );
 }
 
-export default AdminPanel
+export default AdminPanel;

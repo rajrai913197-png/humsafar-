@@ -4,6 +4,10 @@ import { io } from "socket.io-client";
 import { jwtDecode } from "jwt-decode";
 import { useNavigate, useParams } from "react-router-dom";
 
+import IncomingCall from "../components/IncomingCall";
+import VoiceCall from "../components/VoiceCall";
+import VideoCall from "../components/VideoCall";
+
 const Chat = () => {
   const [selectedChat, setSelectedChat] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -13,15 +17,22 @@ const Chat = () => {
   const [mobileChat, setMobileChat] = useState(false);
   const [onlineUsers, setOnlineUsers] = useState([]);
 
+  // CALL STATES
+  const [voiceCall, setVoiceCall] = useState(false);
+  const [videoCall, setVideoCall] = useState(false);
+
+  // INCOMING CALL
+  const [incomingCall, setIncomingCall] = useState(null);
+
   const socketRef = useRef(null);
 
   const { userId: receiverId } = useParams();
 
   const navigate = useNavigate();
 
-  // ==============================
-  // GET LOGGED IN USER ID
-  // ==============================
+  // ==========================================
+  // JWT
+  // ==========================================
 
   const token = localStorage.getItem("token");
 
@@ -30,7 +41,6 @@ const Chat = () => {
   if (token) {
     try {
       const decoded = jwtDecode(token);
-
       myId = decoded.userId;
 
       console.log("MY USER ID:", myId);
@@ -39,9 +49,9 @@ const Chat = () => {
     }
   }
 
-  // ==============================
+  // ==========================================
   // IMAGE
-  // ==============================
+  // ==========================================
 
   const getImage = (person) => {
     if (!person?.image) {
@@ -55,52 +65,32 @@ const Chat = () => {
     return `http://localhost:3300/upload/${person.image}`;
   };
 
-  // ==============================
+  // ==========================================
   // GET CONNECTIONS
-  // ==============================
+  // ==========================================
 
-  const getConnections = async () => {
+  const getConnections = () => {
     if (!myId) {
       console.log("MY ID NOT FOUND");
       return;
     }
 
-    try {
-      console.log(
-        "GETTING CONNECTIONS FOR:",
-        myId
-      );
+    axios
+      .get(`http://localhost:3300/myConnections/${myId}`)
+      .then((res) => {
+        console.log("CONNECTION RESPONSE:", res.data);
 
-      const res = await axios.get(
-        `http://localhost:3300/myConnections/${myId}`
-      );
+        const data = res.data.connections || [];
 
-      console.log(
-        "CONNECTION RESPONSE:",
-        res.data
-      );
-
-      const data =
-        res.data.connections || [];
-
-      console.log(
-        "CONNECTIONS:",
-        data
-      );
-
-      setConnections(data);
-    } catch (error) {
-      console.log(
-        "CONNECTION ERROR:",
-        error.response?.data ||
-          error.message
-      );
-    }
+        setConnections(data);
+      })
+      .catch((error) => {
+        console.log(
+          "CONNECTION ERROR:",
+          error.response?.data || error.message
+        );
+      });
   };
-
-  // ==============================
-  // CONNECTIONS ON LOAD
-  // ==============================
 
   useEffect(() => {
     if (!myId) {
@@ -110,9 +100,9 @@ const Chat = () => {
     getConnections();
   }, [myId]);
 
-  // ==============================
-  // GET SELECTED USER
-  // ==============================
+  // ==========================================
+  // SELECTED CHAT USER
+  // ==========================================
 
   useEffect(() => {
     if (!receiverId) {
@@ -120,53 +110,40 @@ const Chat = () => {
       setMessages([]);
       setMobileChat(false);
 
+      setVoiceCall(false);
+      setVideoCall(false);
+
       return;
     }
 
-    const getSelectedUser = async () => {
-      try {
-        console.log(
-          "GET SELECTED USER:",
-          receiverId
-        );
-
-        const res = await axios.get(
-          `http://localhost:3300/getUserBy/${receiverId}`
-        );
-
-        console.log(
-          "SELECTED USER RESPONSE:",
-          res.data
-        );
+    axios
+      .get(`http://localhost:3300/getUserBy/${receiverId}`)
+      .then((res) => {
+        console.log("SELECTED USER RESPONSE:", res.data);
 
         const user =
           res.data.user ||
           res.data.data ||
           res.data;
 
-        console.log(
-          "SELECTED USER:",
-          user
-        );
-
         setSelectedChat(user);
-
         setMobileChat(true);
-      } catch (error) {
+
+        // New chat open hone par old call close
+        setVoiceCall(false);
+        setVideoCall(false);
+      })
+      .catch((error) => {
         console.log(
           "SELECTED USER ERROR:",
-          error.response?.data ||
-            error.message
+          error.response?.data || error.message
         );
-      }
-    };
-
-    getSelectedUser();
+      });
   }, [receiverId]);
 
-  // ==============================
-  // GET OLD MESSAGES
-  // ==============================
+  // ==========================================
+  // GET MESSAGES
+  // ==========================================
 
   useEffect(() => {
     if (!myId || !receiverId) {
@@ -174,286 +151,324 @@ const Chat = () => {
       return;
     }
 
-    const getMessages = async () => {
-      try {
-        console.log(
-          "GETTING MESSAGES:",
-          myId,
-          receiverId
-        );
+    axios
+      .get(
+        `http://localhost:3300/messages/${myId}/${receiverId}`
+      )
+      .then((res) => {
+        console.log("MESSAGES RESPONSE:", res.data);
 
-        const res = await axios.get(
-          `http://localhost:3300/messages/${myId}/${receiverId}`
-        );
-
-        console.log(
-          "MESSAGES RESPONSE:",
-          res.data
-        );
-
-        setMessages(
-          res.data.messages || []
-        );
-      } catch (error) {
+        setMessages(res.data.messages || []);
+      })
+      .catch((error) => {
         console.log(
           "MESSAGES ERROR:",
-          error.response?.data ||
-            error.message
+          error.response?.data || error.message
         );
-      }
-    };
-
-    getMessages();
+      });
   }, [myId, receiverId]);
 
-  // ==============================
+  // ==========================================
   // SOCKET
-  // ==============================
+  // IMPORTANT:
+  // socket sirf myId par depend karega
+  // receiverId change hone par socket recreate
+  // nahi hoga.
+  // ==========================================
 
   useEffect(() => {
     if (!myId) {
       return;
     }
 
-    console.log(
-      "STARTING SOCKET..."
-    );
+    console.log("STARTING SOCKET...");
 
-    const socket = io(
-      "http://localhost:3300"
-    );
+    const socket = io("http://localhost:3300", {
+      transports: ["websocket"],
+      withCredentials: true,
+    });
 
     socketRef.current = socket;
 
+    // ========================================
+    // CONNECT
+    // ========================================
+
     socket.on("connect", () => {
-      console.log(
-        "SOCKET CONNECTED:",
-        socket.id
-      );
+      console.log("================================");
+      console.log("SOCKET CONNECTED");
+      console.log("SOCKET ID:", socket.id);
+      console.log("MY ROOM:", String(myId));
+      console.log("================================");
 
-      console.log(
-        "JOINING ROOM:",
-        String(myId)
-      );
+      socket.emit("joinUser", String(myId));
+    });
 
-      socket.emit(
-        "joinUser",
-        String(myId)
+    // ========================================
+    // ONLINE USERS
+    // ========================================
+
+    socket.on("onlineUsers", (users) => {
+      console.log("ONLINE USERS:", users);
+
+      setOnlineUsers(
+        (users || []).map((id) => String(id))
       );
     });
 
-    socket.on(
-      "onlineUsers",
-      (users) => {
-        console.log(
-          "ONLINE USERS:",
-          users
-        );
+    // ========================================
+    // RECEIVE MESSAGE
+    // ========================================
 
-        setOnlineUsers(
-          (users || []).map((id) =>
-            String(id)
-          )
-        );
+    socket.on("receiveMessage", (data) => {
+      console.log("🔥 MESSAGE RECEIVED:", data);
+
+      if (!data) {
+        return;
       }
-    );
 
-    socket.on(
-      "receiveMessage",
-      (data) => {
-        console.log(
-          "🔥 MESSAGE RECEIVED:",
-          data
-        );
+      const senderId = String(
+        data.sender?._id || data.sender
+      );
 
-        const senderId = String(
-          data.sender?._id ||
-            data.sender
-        );
+      const receiver = String(
+        data.receiver?._id || data.receiver
+      );
 
-        const receiver = String(
-          data.receiver?._id ||
-            data.receiver
-        );
+      const currentUser = String(myId);
 
-        const currentUser =
-          String(myId);
+      if (
+        senderId === String(receiverId) &&
+        receiver === currentUser
+      ) {
+        setMessages((prev) => {
+          const alreadyExists = prev.some(
+            (msg) =>
+              String(msg._id) === String(data._id)
+          );
 
-        const currentChat =
-          String(receiverId);
+          if (alreadyExists) {
+            return prev;
+          }
 
-        if (
-          senderId === currentChat &&
-          receiver === currentUser
-        ) {
-          setMessages((prev) => {
-            const alreadyExists =
-              prev.some(
-                (msg) =>
-                  String(msg._id) ===
-                  String(data._id)
-              );
-
-            if (alreadyExists) {
-              return prev;
-            }
-
-            return [
-              ...prev,
-              data
-            ];
-          });
-        }
+          return [...prev, data];
+        });
       }
-    );
+    });
 
-    socket.on(
-      "connect_error",
-      (error) => {
-        console.log(
-          "SOCKET ERROR:",
-          error.message
-        );
-      }
-    );
+    // ========================================
+    // 📞 INCOMING CALL
+    // VOICE + VIDEO BOTH
+    // ========================================
 
-    socket.on(
-      "disconnect",
-      (reason) => {
-        console.log(
-          "SOCKET DISCONNECTED:",
-          reason
-        );
+    socket.on("incoming-call", (data) => {
+      console.log("================================");
+      console.log("📞 INCOMING CALL");
+      console.log("CALL DATA:", data);
+      console.log("CALL TYPE:", data?.callType);
+      console.log("CALLER ID:", data?.callerId);
+      console.log("================================");
+
+      if (!data) {
+        return;
       }
-    );
+
+      if (!data.callerId) {
+        console.log("CALLER ID MISSING");
+        return;
+      }
+
+      if (!data.offer) {
+        console.log("WEBRTC OFFER MISSING");
+        return;
+      }
+
+      // IMPORTANT:
+      // video par filter nahi lagana.
+      // voice + video dono yaha aayenge.
+
+      setIncomingCall(data);
+
+      // Agar hum khud kisi call mein hain
+      // to old call close kar do.
+      setVoiceCall(false);
+      setVideoCall(false);
+    });
+
+    // ========================================
+    // CALL ACCEPTED
+    // Caller side ke liye
+    // ========================================
+
+    socket.on("call-accepted", (data) => {
+      console.log("================================");
+      console.log("✅ CALL ACCEPTED");
+      console.log("ANSWER:", data);
+      console.log("================================");
+    });
+
+    // ========================================
+    // CALL REJECTED
+    // ========================================
+
+    socket.on("call-rejected", () => {
+      console.log("❌ CALL REJECTED");
+
+      setVoiceCall(false);
+      setVideoCall(false);
+    });
+
+    // ========================================
+    // CALL ENDED
+    // ========================================
+
+    socket.on("call-ended", () => {
+      console.log("📴 CALL ENDED");
+
+      setIncomingCall(null);
+      setVoiceCall(false);
+      setVideoCall(false);
+    });
+
+    // ========================================
+    // SOCKET ERROR
+    // ========================================
+
+    socket.on("connect_error", (error) => {
+      console.log(
+        "❌ SOCKET CONNECTION ERROR:",
+        error.message
+      );
+    });
+
+    // ========================================
+    // DISCONNECT
+    // ========================================
+
+    socket.on("disconnect", (reason) => {
+      console.log(
+        "SOCKET DISCONNECTED:",
+        reason
+      );
+    });
+
+    // ========================================
+    // CLEANUP
+    // ========================================
 
     return () => {
+      console.log("CLEANING SOCKET...");
+
+      socket.removeAllListeners();
+
       socket.disconnect();
+
       socketRef.current = null;
     };
-  }, [myId, receiverId]);
+  }, [myId]);
 
-  // ==============================
+  // ==========================================
   // SEND MESSAGE
-  // ==============================
+  // ==========================================
 
-  const sendMessage = async () => {
+  const sendMessage = () => {
     if (!message.trim()) {
       return;
     }
 
     if (!myId) {
-      console.log(
-        "MY ID NOT FOUND"
-      );
-
+      console.log("MY ID NOT FOUND");
       return;
     }
 
     if (!receiverId) {
-      console.log(
-        "RECEIVER ID NOT FOUND"
-      );
-
+      console.log("RECEIVER ID NOT FOUND");
       return;
     }
-
-    const text =
-      message.trim();
 
     const messageData = {
       sender: String(myId),
       receiver: String(receiverId),
-      message: text,
+      message: message.trim(),
     };
 
-    try {
-      console.log(
-        "SENDING:",
-        messageData
-      );
-
-      const res = await axios.post(
+    axios
+      .post(
         "http://localhost:3300/sendMessage",
         messageData
-      );
+      )
+      .then((res) => {
+        console.log("MESSAGE SAVED:", res.data);
 
-      console.log(
-        "MESSAGE SAVED:",
-        res.data
-      );
+        const savedMessage = res.data.data;
 
-      const savedMessage =
-        res.data.data;
-
-      setMessages((prev) => {
-        const exists =
-          prev.some(
-            (msg) =>
-              String(msg._id) ===
-              String(
-                savedMessage._id
-              )
-          );
-
-        if (exists) {
-          return prev;
+        if (!savedMessage) {
+          return;
         }
 
-        return [
-          ...prev,
-          savedMessage
-        ];
-      });
+        setMessages((prev) => {
+          const exists = prev.some(
+            (msg) =>
+              String(msg._id) ===
+              String(savedMessage._id)
+          );
 
-      if (
-        socketRef.current &&
-        socketRef.current.connected
-      ) {
+          if (exists) {
+            return prev;
+          }
+
+          return [...prev, savedMessage];
+        });
+
+        if (
+          socketRef.current &&
+          socketRef.current.connected
+        ) {
+          socketRef.current.emit(
+            "sendMessage",
+            savedMessage
+          );
+        }
+
+        setMessage("");
+      })
+      .catch((error) => {
         console.log(
-          "EMITTING MESSAGE:",
-          savedMessage
+          "SEND MESSAGE ERROR:",
+          error.response?.data ||
+            error.message
         );
-
-        socketRef.current.emit(
-          "sendMessage",
-          savedMessage
-        );
-      }
-
-      setMessage("");
-    } catch (error) {
-      console.log(
-        "SEND MESSAGE ERROR:",
-        error.response?.data ||
-          error.message
-      );
-    }
+      });
   };
 
-  // ==============================
-  // ENTER SEND
-  // ==============================
+  // ==========================================
+  // ENTER
+  // ==========================================
 
   const handleKeyDown = (e) => {
-    if (e.key === "Enter") {
+    if (
+      e.key === "Enter" &&
+      !e.shiftKey
+    ) {
+      e.preventDefault();
       sendMessage();
     }
   };
 
-  // ==============================
+  // ==========================================
   // OPEN CHAT
-  // ==============================
+  // ==========================================
 
   const openChat = (id) => {
-    navigate(
-      `/messages/${id}`
-    );
+    setVoiceCall(false);
+    setVideoCall(false);
+
+    navigate(`/messages/${id}`);
   };
 
-  // ==============================
+  // ==========================================
   // BACK
-  // ==============================
+  // ==========================================
 
   const goBack = () => {
     navigate("/messages");
@@ -461,38 +476,37 @@ const Chat = () => {
     setMobileChat(false);
     setSelectedChat(null);
     setMessages([]);
+
+    setVoiceCall(false);
+    setVideoCall(false);
   };
 
-  // ==============================
+  // ==========================================
   // PROFILE
-  // ==============================
+  // ==========================================
 
   const viewProfile = () => {
     if (!receiverId) {
       return;
     }
 
-    navigate(
-      `/profiledetail/${receiverId}`
-    );
+    navigate(`/profiledetail/${receiverId}`);
   };
 
-  // ==============================
+  // ==========================================
   // SEARCH
-  // ==============================
+  // ==========================================
 
   const filteredConnections =
     connections.filter((person) =>
       person?.name
         ?.toLowerCase()
-        .includes(
-          search.toLowerCase()
-        )
+        .includes(search.toLowerCase())
     );
 
-  // ==============================
+  // ==========================================
   // ONLINE
-  // ==============================
+  // ==========================================
 
   const isOnline = (id) => {
     return onlineUsers.includes(
@@ -500,28 +514,42 @@ const Chat = () => {
     );
   };
 
+  // ==========================================
+  // RETURN
+  // ==========================================
+
   return (
     <main className="messages-page">
 
-      {/* ================= HEADER ================= */}
+      {/* ================================= */}
+      {/* INCOMING CALL */}
+      {/* ================================= */}
+
+      {incomingCall && (
+        <IncomingCall
+          call={incomingCall}
+          socket={socketRef.current}
+          onClose={() => {
+            setIncomingCall(null);
+          }}
+        />
+      )}
+
+      {/* ================================= */}
+      {/* HEADING */}
+      {/* ================================= */}
 
       <section className="messages-heading">
-
         <div>
-          <p>
-            YOUR CONVERSATIONS
-          </p>
+          <p>YOUR CONVERSATIONS</p>
 
           <h1>
             Messages{" "}
-            <span>
-              & Connections
-            </span>
+            <span>& Connections</span>
           </h1>
         </div>
 
         <div className="message-count">
-
           <strong>
             {connections.length}
           </strong>
@@ -529,16 +557,18 @@ const Chat = () => {
           <small>
             CONNECTIONS
           </small>
-
         </div>
-
       </section>
 
-      {/* ================= CHAT CONTAINER ================= */}
+      {/* ================================= */}
+      {/* CHAT CONTAINER */}
+      {/* ================================= */}
 
       <section className="chat-container">
 
-        {/* ================= LEFT ================= */}
+        {/* ================================= */}
+        {/* LEFT PANEL */}
+        {/* ================================= */}
 
         <aside
           className={`conversation-panel ${
@@ -547,9 +577,7 @@ const Chat = () => {
               : ""
           }`}
         >
-
           <div className="conversation-header">
-
             <h2>
               Conversations
             </h2>
@@ -562,35 +590,25 @@ const Chat = () => {
             >
               +
             </button>
-
           </div>
 
           <div className="chat-search">
-
-            <span>
-              ⌕
-            </span>
+            <span>⌕</span>
 
             <input
               type="text"
               placeholder="Search conversations..."
               value={search}
               onChange={(e) =>
-                setSearch(
-                  e.target.value
-                )
+                setSearch(e.target.value)
               }
             />
-
           </div>
 
           <div className="conversation-list">
 
-            {filteredConnections.length ===
-            0 ? (
-
+            {filteredConnections.length === 0 ? (
               <div className="empty-chat-list">
-
                 <h3>
                   No conversations
                 </h3>
@@ -599,47 +617,30 @@ const Chat = () => {
                   Accept a connection
                   to start chatting.
                 </p>
-
               </div>
-
             ) : (
-
               filteredConnections.map(
                 (person) => (
-
                   <div
                     key={person._id}
                     className={`conversation ${
-                      String(
-                        receiverId
-                      ) ===
-                      String(
-                        person._id
-                      )
+                      String(receiverId) ===
+                      String(person._id)
                         ? "selected-conversation"
                         : ""
                     }`}
                     onClick={() =>
-                      openChat(
-                        person._id
-                      )
+                      openChat(person._id)
                     }
                   >
-
                     <div className="conversation-image">
 
                       <img
-                        src={getImage(
-                          person
-                        )}
-                        alt={
-                          person.name
-                        }
+                        src={getImage(person)}
+                        alt={person.name}
                       />
 
-                      {isOnline(
-                        person._id
-                      ) && (
+                      {isOnline(person._id) && (
                         <span className="online-dot"></span>
                       )}
 
@@ -648,46 +649,36 @@ const Chat = () => {
                     <div className="conversation-info">
 
                       <div className="conversation-top">
-
                         <h3>
                           {person.name}
                         </h3>
-
                       </div>
 
                       <div className="conversation-bottom">
-
                         <p>
                           {person.profession ||
                             "Start a conversation"}
                         </p>
-
                       </div>
 
                     </div>
-
                   </div>
-
                 )
               )
-
             )}
 
           </div>
-
         </aside>
 
-        {/* ================= RIGHT CHAT ================= */}
+        {/* ================================= */}
+        {/* CHAT WINDOW */}
+        {/* ================================= */}
 
         <section className="chat-window">
 
           {!selectedChat ? (
-
             <div className="chat-empty-screen">
-
-              <div>
-                💬
-              </div>
+              <div>💬</div>
 
               <h2>
                 Start a conversation
@@ -698,14 +689,12 @@ const Chat = () => {
                 connections to start
                 chatting.
               </p>
-
             </div>
-
           ) : (
-
             <>
-
-              {/* ================= CHAT HEADER ================= */}
+              {/* ================================= */}
+              {/* CHAT HEADER */}
+              {/* ================================= */}
 
               <header className="chat-header">
 
@@ -719,12 +708,8 @@ const Chat = () => {
                 <div className="chat-user-image">
 
                   <img
-                    src={getImage(
-                      selectedChat
-                    )}
-                    alt={
-                      selectedChat.name
-                    }
+                    src={getImage(selectedChat)}
+                    alt={selectedChat.name}
                   />
 
                   {isOnline(
@@ -737,11 +722,8 @@ const Chat = () => {
 
                 <div
                   className="chat-user-info"
-                  onClick={
-                    viewProfile
-                  }
+                  onClick={viewProfile}
                 >
-
                   <h2>
                     {selectedChat.name}
                   </h2>
@@ -753,43 +735,117 @@ const Chat = () => {
                       ? "Online"
                       : "Offline"}
                   </p>
+                </div>
+
+                {/* ================================= */}
+                {/* CALL BUTTONS */}
+                {/* ================================= */}
+
+                <div className="chat-call-actions">
+
+                  {/* VOICE CALL */}
+
+                  <button
+                    className="call-icon-button"
+                    onClick={() => {
+                      console.log(
+                        "📞 VOICE CALL CLICKED"
+                      );
+
+                      setVideoCall(false);
+                      setVoiceCall(true);
+                    }}
+                    title="Voice Call"
+                  >
+                    📞
+                  </button>
+
+                  {/* VIDEO CALL */}
+
+                  <button
+                    className="call-icon-button"
+                    onClick={() => {
+                      console.log(
+                        "📹 VIDEO CALL CLICKED"
+                      );
+
+                      setVoiceCall(false);
+                      setVideoCall(true);
+                    }}
+                    title="Video Call"
+                  >
+                    📹
+                  </button>
 
                 </div>
 
                 <button
                   className="more-button"
-                  onClick={
-                    viewProfile
-                  }
+                  onClick={viewProfile}
                 >
                   ⋮
                 </button>
 
               </header>
 
-              {/* ================= BODY ================= */}
+              {/* ================================= */}
+              {/* VOICE CALL */}
+              {/* ================================= */}
+
+              {voiceCall && (
+                <VoiceCall
+                  user={selectedChat}
+                  socket={socketRef.current}
+                  myId={myId}
+                  onClose={() => {
+                    console.log(
+                      "VOICE CALL CLOSED"
+                    );
+
+                    setVoiceCall(false);
+                  }}
+                />
+              )}
+
+              {/* ================================= */}
+              {/* VIDEO CALL */}
+              {/* ================================= */}
+
+              {videoCall && (
+                <VideoCall
+                  user={selectedChat}
+                  socket={socketRef.current}
+                  myId={myId}
+                  call={{
+                    isCaller: true,
+                  }}
+                  onClose={() => {
+                    console.log(
+                      "VIDEO CALL CLOSED"
+                    );
+
+                    setVideoCall(false);
+                  }}
+                />
+              )}
+
+              {/* ================================= */}
+              {/* CHAT BODY */}
+              {/* ================================= */}
 
               <div className="chat-body">
 
                 <div className="date-divider">
-                  <span>
-                    TODAY
-                  </span>
+                  <span>TODAY</span>
                 </div>
 
                 <div className="conversation-start">
 
                   <div className="small-profile">
-
                     <img
-                      src={getImage(
-                        selectedChat
-                      )}
-                      alt={
-                        selectedChat.name
-                      }
+                      src={getImage(selectedChat)}
+                      alt={selectedChat.name}
                     />
-
                   </div>
 
                   <h3>
@@ -808,13 +864,14 @@ const Chat = () => {
 
                 </div>
 
+                {/* ================================= */}
+                {/* MESSAGES */}
+                {/* ================================= */}
+
                 <div className="messages-list">
 
-                  {messages.length ===
-                  0 ? (
-
+                  {messages.length === 0 ? (
                     <div className="no-messages">
-
                       <p>
                         No messages yet
                       </p>
@@ -822,76 +879,61 @@ const Chat = () => {
                       <span>
                         Say hello 👋
                       </span>
-
                     </div>
-
                   ) : (
+                    messages.map((msg) => {
 
-                    messages.map(
-                      (msg) => {
+                      const senderId =
+                        String(
+                          msg.sender?._id ||
+                            msg.sender
+                        );
 
-                        const senderId =
-                          String(
-                            msg.sender?._id ||
-                              msg.sender
-                          );
+                      const mine =
+                        senderId ===
+                        String(myId);
 
-                        const mine =
-                          senderId ===
-                          String(
-                            myId
-                          );
+                      return (
+                        <div
+                          key={msg._id}
+                          className={`message-row ${
+                            mine
+                              ? "my-message"
+                              : "other-message"
+                          }`}
+                        >
+                          <div className="message-bubble">
 
-                        return (
-                          <div
-                            key={
-                              msg._id
-                            }
-                            className={`message-row ${
-                              mine
-                                ? "my-message"
-                                : "other-message"
-                            }`}
-                          >
+                            <p>
+                              {msg.message}
+                            </p>
 
-                            <div className="message-bubble">
-
-                              <p>
-                                {
-                                  msg.message
-                                }
-                              </p>
-
-                              <span>
-                                {msg.createdAt
-                                  ? new Date(
-                                      msg.createdAt
-                                    ).toLocaleTimeString(
-                                      [],
-                                      {
-                                        hour:
-                                          "2-digit",
-                                        minute:
-                                          "2-digit",
-                                      }
-                                    )
-                                  : ""}
-                              </span>
-
-                            </div>
+                            <span>
+                              {msg.createdAt
+                                ? new Date(
+                                    msg.createdAt
+                                  ).toLocaleTimeString(
+                                    [],
+                                    {
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                    }
+                                  )
+                                : ""}
+                            </span>
 
                           </div>
-                        );
-                      }
-                    )
-
+                        </div>
+                      );
+                    })
                   )}
 
                 </div>
-
               </div>
 
-              {/* ================= INPUT ================= */}
+              {/* ================================= */}
+              {/* MESSAGE INPUT */}
+              {/* ================================= */}
 
               <div className="message-input-area">
 
@@ -912,34 +954,24 @@ const Chat = () => {
                   placeholder="Write a message..."
                   value={message}
                   onChange={(e) =>
-                    setMessage(
-                      e.target.value
-                    )
+                    setMessage(e.target.value)
                   }
-                  onKeyDown={
-                    handleKeyDown
-                  }
+                  onKeyDown={handleKeyDown}
                 />
 
                 <button
                   className="send-button"
-                  onClick={
-                    sendMessage
-                  }
+                  onClick={sendMessage}
                 >
                   ➤
                 </button>
 
               </div>
-
             </>
-
           )}
 
         </section>
-
       </section>
-
     </main>
   );
 };
