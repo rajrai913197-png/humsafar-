@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-
+import { jwtDecode } from "jwt-decode";
 function AdminPanel() {
+ const token =  localStorage.getItem("token")
+ const decoded = jwtDecode(token)
+ const id = decoded.userId
+ console.log(id)
   const navigate = useNavigate();
-
   const [users, setUsers] = useState([]);
   const [activeFilter, setActiveFilter] = useState("All");
   const [search, setSearch] = useState("");
@@ -14,15 +17,15 @@ function AdminPanel() {
   /* ================= GET USERS ================= */
 
   const getAllUsers = async () => {
-    try {
-      const res = await axios.get(
-        "http://localhost:3300/getalluser"
-      );
-
-      setUsers(res.data || []);
-    } catch (error) {
-      console.log("GET USERS ERROR:", error);
-    }
+    axios.get("http://localhost:3300/getalluser")
+    .then(res => {
+         const result =  res.data.filter(
+          (users) => users._id != id
+      )
+      setUsers(result)
+    
+    })
+    .catch(err => console.log(err))
   };
 
   useEffect(() => {
