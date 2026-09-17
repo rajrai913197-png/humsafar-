@@ -21,6 +21,10 @@ function FindMatches() {
   // Search
   const [search, setSearch] = useState("");
 
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const profilesPerPage = 10;
+
   // Filter state
   const [filters, setFilters] = useState({
     minAge: "",
@@ -55,11 +59,15 @@ function FindMatches() {
 
         console.log("My ID:", myId);
 
+        // Current logged-in user ko remove karna
         const otherProfiles = res.data.filter(
           (profile) => profile._id !== myId
         );
 
+        // Original profiles
         setProfiles(otherProfiles);
+
+        // Initially all profiles show
         setFilteredProfiles(otherProfiles);
       })
       .catch((err) => {
@@ -78,39 +86,65 @@ function FindMatches() {
   useEffect(() => {
     let result = [...profiles];
 
-    // Search
+    // =========================
+    // SEARCH
+    // =========================
+
     if (search.trim()) {
       const searchValue = search.toLowerCase();
 
       result = result.filter((profile) => {
         return (
-          profile.name?.toLowerCase().includes(searchValue) ||
-          profile.city?.toLowerCase().includes(searchValue) ||
-          profile.education?.toLowerCase().includes(searchValue) ||
-          profile.profession?.toLowerCase().includes(searchValue) ||
-          profile.religion?.toLowerCase().includes(searchValue) ||
-          profile.gender?.toLowerCase().includes(searchValue)
+          profile.name
+            ?.toLowerCase()
+            .includes(searchValue) ||
+          profile.city
+            ?.toLowerCase()
+            .includes(searchValue) ||
+          profile.education
+            ?.toLowerCase()
+            .includes(searchValue) ||
+          profile.profession
+            ?.toLowerCase()
+            .includes(searchValue) ||
+          profile.religion
+            ?.toLowerCase()
+            .includes(searchValue) ||
+          profile.gender
+            ?.toLowerCase()
+            .includes(searchValue)
         );
       });
     }
 
-    // Minimum Age
+    // =========================
+    // MINIMUM AGE
+    // =========================
+
     if (filters.minAge) {
       result = result.filter(
         (profile) =>
-          Number(profile.age) >= Number(filters.minAge)
+          Number(profile.age) >=
+          Number(filters.minAge)
       );
     }
 
-    // Maximum Age
+    // =========================
+    // MAXIMUM AGE
+    // =========================
+
     if (filters.maxAge) {
       result = result.filter(
         (profile) =>
-          Number(profile.age) <= Number(filters.maxAge)
+          Number(profile.age) <=
+          Number(filters.maxAge)
       );
     }
 
-    // Gender
+    // =========================
+    // GENDER
+    // =========================
+
     if (filters.gender) {
       result = result.filter(
         (profile) =>
@@ -119,7 +153,10 @@ function FindMatches() {
       );
     }
 
-    // City
+    // =========================
+    // CITY
+    // =========================
+
     if (filters.city) {
       result = result.filter(
         (profile) =>
@@ -128,7 +165,10 @@ function FindMatches() {
       );
     }
 
-    // Education
+    // =========================
+    // EDUCATION
+    // =========================
+
     if (filters.education) {
       result = result.filter(
         (profile) =>
@@ -137,7 +177,10 @@ function FindMatches() {
       );
     }
 
-    // Profession
+    // =========================
+    // PROFESSION
+    // =========================
+
     if (filters.profession) {
       result = result.filter(
         (profile) =>
@@ -146,7 +189,10 @@ function FindMatches() {
       );
     }
 
-    // Religion
+    // =========================
+    // RELIGION
+    // =========================
+
     if (filters.religion) {
       result = result.filter(
         (profile) =>
@@ -156,7 +202,38 @@ function FindMatches() {
     }
 
     setFilteredProfiles(result);
+
   }, [profiles, filters, search]);
+
+  // =========================
+  // RESET PAGE WHEN SEARCH
+  // OR FILTER CHANGES
+  // =========================
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filters, search]);
+
+  // =========================
+  // PAGINATION
+  // =========================
+
+  const indexOfLastProfile =
+    currentPage * profilesPerPage;
+
+  const indexOfFirstProfile =
+    indexOfLastProfile - profilesPerPage;
+
+  const currentProfiles =
+    filteredProfiles.slice(
+      indexOfFirstProfile,
+      indexOfLastProfile
+    );
+
+  const totalPages = Math.ceil(
+    filteredProfiles.length /
+      profilesPerPage
+  );
 
   // =========================
   // INTEREST
@@ -172,7 +249,10 @@ function FindMatches() {
   };
 
   const sendInterest = () => {
-    if (!decoded?.userId || !selectedProfile?._id) {
+    if (
+      !decoded?.userId ||
+      !selectedProfile?._id
+    ) {
       return;
     }
 
@@ -217,7 +297,10 @@ function FindMatches() {
   // FILTER FUNCTIONS
   // =========================
 
-  const handleTempFilterChange = (field, value) => {
+  const handleTempFilterChange = (
+    field,
+    value
+  ) => {
     setTempFilters((prev) => ({
       ...prev,
       [field]: value,
@@ -242,6 +325,7 @@ function FindMatches() {
 
     setTempFilters(emptyFilters);
     setFilters(emptyFilters);
+    setCurrentPage(1);
   };
 
   // =========================
@@ -306,16 +390,16 @@ function FindMatches() {
 
       </section>
 
-
       {/* ================= TOOLBAR ================= */}
 
       <section className="find-toolbar">
 
         <div className="results-count">
-          <strong>{filteredProfiles.length}</strong>{" "}
+          <strong>
+            {filteredProfiles.length}
+          </strong>{" "}
           matches found
         </div>
-
 
         <div className="toolbar-actions">
 
@@ -336,12 +420,13 @@ function FindMatches() {
 
           </div>
 
-
           {/* FILTER BUTTON */}
 
           <button
             className="filter-button"
-            onClick={() => setFilterOpen(true)}
+            onClick={() =>
+              setFilterOpen(true)
+            }
           >
             ☷ &nbsp; Filters
           </button>
@@ -350,19 +435,20 @@ function FindMatches() {
 
       </section>
 
-
       {/* ================= PROFILE GRID ================= */}
 
       <section className="profile-grid">
 
-        {filteredProfiles.length > 0 ? (
+        {currentProfiles.length > 0 ? (
 
-          filteredProfiles.map((profile) => (
+          currentProfiles.map((profile) => (
 
             <article
               className="match-card"
               key={profile._id}
             >
+
+              {/* IMAGE */}
 
               <div className="match-image">
 
@@ -376,13 +462,12 @@ function FindMatches() {
                 />
 
                 {profile.verified && (
-
                   <span className="verified">
                     ✓ Verified
                   </span>
-
                 )}
 
+                {/* INTEREST */}
 
                 <button
                   className="heart-button"
@@ -393,7 +478,9 @@ function FindMatches() {
                       handleInterest(profile);
                     }
                   }}
-                  disabled={interestSent[profile._id]}
+                  disabled={
+                    interestSent[profile._id]
+                  }
                 >
                   {interestSent[profile._id]
                     ? "♥"
@@ -402,6 +489,7 @@ function FindMatches() {
 
               </div>
 
+              {/* DETAILS */}
 
               <div className="match-details">
 
@@ -409,6 +497,7 @@ function FindMatches() {
 
                   <h2>
                     {profile.name}
+
                     {profile.age
                       ? `, ${profile.age}`
                       : ""}
@@ -418,20 +507,18 @@ function FindMatches() {
 
                 </div>
 
-
                 <p className="profession">
                   {profile.profession ||
                     "Profession not added"}
                 </p>
 
-
                 <p className="location">
                   ♧ &nbsp;
+
                   {profile.city ||
                     profile.location ||
                     "Location not added"}
                 </p>
-
 
                 <div className="short-info">
 
@@ -448,7 +535,6 @@ function FindMatches() {
 
                 </div>
 
-
                 <div className="card-bottom">
 
                   <span className="profile-status">
@@ -458,7 +544,6 @@ function FindMatches() {
                       : "New Profile"}
 
                   </span>
-
 
                   <button
                     className="view-profile"
@@ -497,6 +582,69 @@ function FindMatches() {
 
       </section>
 
+      {/* ================= PAGINATION ================= */}
+
+      {totalPages > 1 && (
+
+        <div className="pagination">
+
+          {/* PREVIOUS */}
+
+          <button
+            disabled={currentPage === 1}
+            onClick={() =>
+              setCurrentPage(
+                (prev) => prev - 1
+              )
+            }
+          >
+            ← Previous
+          </button>
+
+          {/* PAGE NUMBERS */}
+
+          {Array.from(
+            { length: totalPages },
+            (_, index) => (
+
+              <button
+                key={index + 1}
+                className={
+                  currentPage ===
+                  index + 1
+                    ? "active-page"
+                    : ""
+                }
+                onClick={() =>
+                  setCurrentPage(
+                    index + 1
+                  )
+                }
+              >
+                {index + 1}
+              </button>
+
+            )
+          )}
+
+          {/* NEXT */}
+
+          <button
+            disabled={
+              currentPage === totalPages
+            }
+            onClick={() =>
+              setCurrentPage(
+                (prev) => prev + 1
+              )
+            }
+          >
+            Next →
+          </button>
+
+        </div>
+
+      )}
 
       {/* ================= INTEREST POPUP ================= */}
 
@@ -521,10 +669,10 @@ function FindMatches() {
               ×
             </button>
 
-
             {!interestSuccess ? (
 
               <>
+
                 <div className="interest-popup-icon">
                   ♡
                 </div>
@@ -563,11 +711,13 @@ function FindMatches() {
                   </button>
 
                 </div>
+
               </>
 
             ) : (
 
               <>
+
                 <div className="interest-success-icon">
                   ✓
                 </div>
@@ -596,6 +746,7 @@ function FindMatches() {
                 >
                   Done
                 </button>
+
               </>
 
             )}
@@ -606,14 +757,15 @@ function FindMatches() {
 
       )}
 
-
       {/* ================= FILTER DRAWER ================= */}
 
       {filterOpen && (
 
         <div
           className="filter-backdrop"
-          onClick={() => setFilterOpen(false)}
+          onClick={() =>
+            setFilterOpen(false)
+          }
         >
 
           <aside
@@ -649,7 +801,6 @@ function FindMatches() {
 
             </div>
 
-
             {/* FILTER CONTENT */}
 
             <div className="filter-content">
@@ -665,7 +816,9 @@ function FindMatches() {
                 <input
                   type="number"
                   placeholder="Min"
-                  value={tempFilters.minAge}
+                  value={
+                    tempFilters.minAge
+                  }
                   onChange={(e) =>
                     handleTempFilterChange(
                       "minAge",
@@ -681,7 +834,9 @@ function FindMatches() {
                 <input
                   type="number"
                   placeholder="Max"
-                  value={tempFilters.maxAge}
+                  value={
+                    tempFilters.maxAge
+                  }
                   onChange={(e) =>
                     handleTempFilterChange(
                       "maxAge",
@@ -692,7 +847,6 @@ function FindMatches() {
 
               </div>
 
-
               {/* GENDER */}
 
               <label>
@@ -700,7 +854,9 @@ function FindMatches() {
               </label>
 
               <select
-                value={tempFilters.gender}
+                value={
+                  tempFilters.gender
+                }
                 onChange={(e) =>
                   handleTempFilterChange(
                     "gender",
@@ -723,7 +879,6 @@ function FindMatches() {
 
               </select>
 
-
               {/* CITY */}
 
               <label>
@@ -731,7 +886,9 @@ function FindMatches() {
               </label>
 
               <select
-                value={tempFilters.city}
+                value={
+                  tempFilters.city
+                }
                 onChange={(e) =>
                   handleTempFilterChange(
                     "city",
@@ -757,7 +914,6 @@ function FindMatches() {
 
               </select>
 
-
               {/* EDUCATION */}
 
               <label>
@@ -765,7 +921,9 @@ function FindMatches() {
               </label>
 
               <select
-                value={tempFilters.education}
+                value={
+                  tempFilters.education
+                }
                 onChange={(e) =>
                   handleTempFilterChange(
                     "education",
@@ -778,19 +936,20 @@ function FindMatches() {
                   Any Education
                 </option>
 
-                {educations.map((education) => (
+                {educations.map(
+                  (education) => (
 
-                  <option
-                    key={education}
-                    value={education}
-                  >
-                    {education}
-                  </option>
+                    <option
+                      key={education}
+                      value={education}
+                    >
+                      {education}
+                    </option>
 
-                ))}
+                  )
+                )}
 
               </select>
-
 
               {/* PROFESSION */}
 
@@ -799,7 +958,9 @@ function FindMatches() {
               </label>
 
               <select
-                value={tempFilters.profession}
+                value={
+                  tempFilters.profession
+                }
                 onChange={(e) =>
                   handleTempFilterChange(
                     "profession",
@@ -812,19 +973,20 @@ function FindMatches() {
                   Any Profession
                 </option>
 
-                {professions.map((profession) => (
+                {professions.map(
+                  (profession) => (
 
-                  <option
-                    key={profession}
-                    value={profession}
-                  >
-                    {profession}
-                  </option>
+                    <option
+                      key={profession}
+                      value={profession}
+                    >
+                      {profession}
+                    </option>
 
-                ))}
+                  )
+                )}
 
               </select>
-
 
               {/* RELIGION */}
 
@@ -833,7 +995,9 @@ function FindMatches() {
               </label>
 
               <select
-                value={tempFilters.religion}
+                value={
+                  tempFilters.religion
+                }
                 onChange={(e) =>
                   handleTempFilterChange(
                     "religion",
@@ -846,21 +1010,22 @@ function FindMatches() {
                   Any Religion
                 </option>
 
-                {religions.map((religion) => (
+                {religions.map(
+                  (religion) => (
 
-                  <option
-                    key={religion}
-                    value={religion}
-                  >
-                    {religion}
-                  </option>
+                    <option
+                      key={religion}
+                      value={religion}
+                    >
+                      {religion}
+                    </option>
 
-                ))}
+                  )
+                )}
 
               </select>
 
             </div>
-
 
             {/* DRAWER FOOTER */}
 
