@@ -10,10 +10,42 @@ function FindMatches() {
   const navigate = useNavigate();
 
   const [profiles, setProfiles] = useState([]);
+  const [filteredProfiles, setFilteredProfiles] = useState([]);
+
   const [filterOpen, setFilterOpen] = useState(false);
   const [selectedProfile, setSelectedProfile] = useState(null);
+
   const [interestSent, setInterestSent] = useState({});
   const [interestSuccess, setInterestSuccess] = useState(false);
+
+  // Search
+  const [search, setSearch] = useState("");
+
+  // Filter state
+  const [filters, setFilters] = useState({
+    minAge: "",
+    maxAge: "",
+    gender: "",
+    city: "",
+    education: "",
+    profession: "",
+    religion: "",
+  });
+
+  // Temporary filter state inside drawer
+  const [tempFilters, setTempFilters] = useState({
+    minAge: "",
+    maxAge: "",
+    gender: "",
+    city: "",
+    education: "",
+    profession: "",
+    religion: "",
+  });
+
+  // =========================
+  // GET USERS
+  // =========================
 
   const GetUser = () => {
     axios
@@ -28,6 +60,7 @@ function FindMatches() {
         );
 
         setProfiles(otherProfiles);
+        setFilteredProfiles(otherProfiles);
       })
       .catch((err) => {
         console.log(err);
@@ -37,6 +70,97 @@ function FindMatches() {
   useEffect(() => {
     GetUser();
   }, []);
+
+  // =========================
+  // SEARCH + FILTER
+  // =========================
+
+  useEffect(() => {
+    let result = [...profiles];
+
+    // Search
+    if (search.trim()) {
+      const searchValue = search.toLowerCase();
+
+      result = result.filter((profile) => {
+        return (
+          profile.name?.toLowerCase().includes(searchValue) ||
+          profile.city?.toLowerCase().includes(searchValue) ||
+          profile.education?.toLowerCase().includes(searchValue) ||
+          profile.profession?.toLowerCase().includes(searchValue) ||
+          profile.religion?.toLowerCase().includes(searchValue) ||
+          profile.gender?.toLowerCase().includes(searchValue)
+        );
+      });
+    }
+
+    // Minimum Age
+    if (filters.minAge) {
+      result = result.filter(
+        (profile) =>
+          Number(profile.age) >= Number(filters.minAge)
+      );
+    }
+
+    // Maximum Age
+    if (filters.maxAge) {
+      result = result.filter(
+        (profile) =>
+          Number(profile.age) <= Number(filters.maxAge)
+      );
+    }
+
+    // Gender
+    if (filters.gender) {
+      result = result.filter(
+        (profile) =>
+          profile.gender?.toLowerCase() ===
+          filters.gender.toLowerCase()
+      );
+    }
+
+    // City
+    if (filters.city) {
+      result = result.filter(
+        (profile) =>
+          profile.city?.toLowerCase() ===
+          filters.city.toLowerCase()
+      );
+    }
+
+    // Education
+    if (filters.education) {
+      result = result.filter(
+        (profile) =>
+          profile.education?.toLowerCase() ===
+          filters.education.toLowerCase()
+      );
+    }
+
+    // Profession
+    if (filters.profession) {
+      result = result.filter(
+        (profile) =>
+          profile.profession?.toLowerCase() ===
+          filters.profession.toLowerCase()
+      );
+    }
+
+    // Religion
+    if (filters.religion) {
+      result = result.filter(
+        (profile) =>
+          profile.religion?.toLowerCase() ===
+          filters.religion.toLowerCase()
+      );
+    }
+
+    setFilteredProfiles(result);
+  }, [profiles, filters, search]);
+
+  // =========================
+  // INTEREST
+  // =========================
 
   const handleInterest = (profile) => {
     if (interestSent[profile._id]) {
@@ -89,82 +213,151 @@ function FindMatches() {
     setInterestSuccess(false);
   };
 
+  // =========================
+  // FILTER FUNCTIONS
+  // =========================
+
+  const handleTempFilterChange = (field, value) => {
+    setTempFilters((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  const applyFilters = () => {
+    setFilters(tempFilters);
+    setFilterOpen(false);
+  };
+
+  const resetFilters = () => {
+    const emptyFilters = {
+      minAge: "",
+      maxAge: "",
+      gender: "",
+      city: "",
+      education: "",
+      profession: "",
+      religion: "",
+    };
+
+    setTempFilters(emptyFilters);
+    setFilters(emptyFilters);
+  };
+
+  // =========================
+  // UNIQUE VALUES
+  // =========================
+
+  const cities = [
+    ...new Set(
+      profiles
+        .map((profile) => profile.city)
+        .filter(Boolean)
+    ),
+  ];
+
+  const educations = [
+    ...new Set(
+      profiles
+        .map((profile) => profile.education)
+        .filter(Boolean)
+    ),
+  ];
+
+  const professions = [
+    ...new Set(
+      profiles
+        .map((profile) => profile.profession)
+        .filter(Boolean)
+    ),
+  ];
+
+  const religions = [
+    ...new Set(
+      profiles
+        .map((profile) => profile.religion)
+        .filter(Boolean)
+    ),
+  ];
+
   return (
-    <>
-      <main className="find-page">
+    <main className="find-page">
 
-        <section className="find-header">
+      {/* ================= HEADER ================= */}
 
-          <div>
+      <section className="find-header">
 
-            <p className="find-label">
-              DISCOVER CONNECTIONS
-            </p>
+        <div>
 
-            <h1>
-              Find Your <span>Match</span>
-            </h1>
+          <p className="find-label">
+            DISCOVER CONNECTIONS
+          </p>
 
-            <p className="find-subtitle">
-              Discover meaningful profiles who could be
-              your perfect life partner.
-            </p>
+          <h1>
+            Find Your <span>Match</span>
+          </h1>
 
-          </div>
+          <p className="find-subtitle">
+            Discover meaningful profiles who could be
+            your perfect life partner.
+          </p>
 
-        </section>
+        </div>
+
+      </section>
 
 
-        <section className="find-toolbar">
+      {/* ================= TOOLBAR ================= */}
 
-          <div className="results-count">
+      <section className="find-toolbar">
 
-            <strong>{profiles.length}</strong> matches found
+        <div className="results-count">
+          <strong>{filteredProfiles.length}</strong>{" "}
+          matches found
+        </div>
 
-          </div>
 
-          <div className="toolbar-actions">
+        <div className="toolbar-actions">
 
-            <div className="search-box">
+          {/* SEARCH */}
 
-              <span>⌕</span>
+          <div className="search-box">
 
-              <input
-                type="text"
-                placeholder="Search profiles..."
-              />
+            <span>⌕</span>
 
-            </div>
-
-            <button
-              className="filter-button"
-              onClick={() => setFilterOpen(true)}
-            >
-              ☷ &nbsp; Filters
-            </button>
-
-            <select className="sort-select">
-
-              <option>Recommended</option>
-
-              <option>Recently Active</option>
-
-              <option>Newest Profiles</option>
-
-              <option>Age: Low to High</option>
-
-              <option>Age: High to Low</option>
-
-            </select>
+            <input
+              type="text"
+              placeholder="Search profiles..."
+              value={search}
+              onChange={(e) =>
+                setSearch(e.target.value)
+              }
+            />
 
           </div>
 
-        </section>
+
+          {/* FILTER BUTTON */}
+
+          <button
+            className="filter-button"
+            onClick={() => setFilterOpen(true)}
+          >
+            ☷ &nbsp; Filters
+          </button>
+
+        </div>
+
+      </section>
 
 
-        <section className="profile-grid">
+      {/* ================= PROFILE GRID ================= */}
 
-          {profiles.map((profile) => (
+      <section className="profile-grid">
+
+        {filteredProfiles.length > 0 ? (
+
+          filteredProfiles.map((profile) => (
 
             <article
               className="match-card"
@@ -190,21 +383,21 @@ function FindMatches() {
 
                 )}
 
+
                 <button
                   className="heart-button"
-                  onClick={()=> {if (!token) {
-                     navigate("/login")
-                  }else{
-                    handleInterest(profile)
-                    
-                  }
-                  
-                }}
-                 
-                  
+                  onClick={() => {
+                    if (!token) {
+                      navigate("/login");
+                    } else {
+                      handleInterest(profile);
+                    }
+                  }}
                   disabled={interestSent[profile._id]}
                 >
-                  {interestSent[profile._id] ? "♥" : "♡"}
+                  {interestSent[profile._id]
+                    ? "♥"
+                    : "♡"}
                 </button>
 
               </div>
@@ -215,7 +408,10 @@ function FindMatches() {
                 <div className="name-line">
 
                   <h2>
-                    {profile.name}, {profile.age}
+                    {profile.name}
+                    {profile.age
+                      ? `, ${profile.age}`
+                      : ""}
                   </h2>
 
                   <span className="online"></span>
@@ -224,7 +420,8 @@ function FindMatches() {
 
 
                 <p className="profession">
-                  {profile.profession || "Profession not added"}
+                  {profile.profession ||
+                    "Profession not added"}
                 </p>
 
 
@@ -239,7 +436,8 @@ function FindMatches() {
                 <div className="short-info">
 
                   <span>
-                    {profile.education || "Education"}
+                    {profile.education ||
+                      "Education"}
                   </span>
 
                   <span>
@@ -279,323 +477,418 @@ function FindMatches() {
 
             </article>
 
-          ))}
+          ))
 
-        </section>
+        ) : (
+
+          <div className="no-results">
+
+            <h2>
+              No Profiles Found
+            </h2>
+
+            <p>
+              Try changing your search or filters.
+            </p>
+
+          </div>
+
+        )}
+
+      </section>
 
 
-        <div className="pagination">
+      {/* ================= INTEREST POPUP ================= */}
 
-          <button>←</button>
+      {selectedProfile && (
 
-          <button className="page-active">
-            1
-          </button>
+        <div
+          className="interest-backdrop"
+          onClick={closeInterestPopup}
+        >
 
-          <button>2</button>
+          <div
+            className="interest-popup"
+            onClick={(e) =>
+              e.stopPropagation()
+            }
+          >
 
-          <button>3</button>
+            <button
+              className="interest-close"
+              onClick={closeInterestPopup}
+            >
+              ×
+            </button>
 
-          <button>4</button>
 
-          <button>5</button>
+            {!interestSuccess ? (
 
-          <button>→</button>
+              <>
+                <div className="interest-popup-icon">
+                  ♡
+                </div>
+
+                <h2>
+                  Send Interest?
+                </h2>
+
+                <p>
+                  Would you like to send an interest to
+                </p>
+
+                <h3>
+                  {selectedProfile.name}
+                </h3>
+
+                <p className="interest-popup-text">
+                  Show your interest and start a meaningful
+                  connection.
+                </p>
+
+                <div className="interest-popup-actions">
+
+                  <button
+                    className="cancel-interest"
+                    onClick={closeInterestPopup}
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    className="send-interest"
+                    onClick={sendInterest}
+                  >
+                    Send Interest ♥
+                  </button>
+
+                </div>
+              </>
+
+            ) : (
+
+              <>
+                <div className="interest-success-icon">
+                  ✓
+                </div>
+
+                <h2>
+                  Interest Sent!
+                </h2>
+
+                <p>
+                  Your interest has been sent successfully
+                  to
+                </p>
+
+                <h3>
+                  {selectedProfile.name}
+                </h3>
+
+                <p className="interest-popup-text">
+                  We'll let you know if they accept your
+                  interest.
+                </p>
+
+                <button
+                  className="send-interest"
+                  onClick={closeInterestPopup}
+                >
+                  Done
+                </button>
+              </>
+
+            )}
+
+          </div>
 
         </div>
 
+      )}
 
-        {selectedProfile && (
 
-          <div
-            className="interest-backdrop"
-            onClick={closeInterestPopup}
+      {/* ================= FILTER DRAWER ================= */}
+
+      {filterOpen && (
+
+        <div
+          className="filter-backdrop"
+          onClick={() => setFilterOpen(false)}
+        >
+
+          <aside
+            className="filter-drawer"
+            onClick={(e) =>
+              e.stopPropagation()
+            }
           >
 
-            <div
-              className="interest-popup"
-              onClick={(e) => e.stopPropagation()}
-            >
+            {/* DRAWER HEADER */}
+
+            <div className="drawer-header">
+
+              <div>
+
+                <p>
+                  REFINE SEARCH
+                </p>
+
+                <h2>
+                  Filters
+                </h2>
+
+              </div>
 
               <button
-                className="interest-close"
-                onClick={closeInterestPopup}
+                onClick={() =>
+                  setFilterOpen(false)
+                }
               >
                 ×
               </button>
 
+            </div>
 
-              {!interestSuccess ? (
 
-                <>
-                  <div className="interest-popup-icon">
-                    ♡
-                  </div>
+            {/* FILTER CONTENT */}
 
-                  <h2>
-                    Send Interest?
-                  </h2>
+            <div className="filter-content">
 
-                  <p>
-                    Would you like to send an interest to
-                  </p>
+              {/* AGE */}
 
-                  <h3>
-                    {selectedProfile.name}
-                  </h3>
+              <label>
+                Age Range
+              </label>
 
-                  <p className="interest-popup-text">
-                    Show your interest and start a meaningful
-                    connection.
-                  </p>
+              <div className="age-inputs">
 
-                  <div className="interest-popup-actions">
+                <input
+                  type="number"
+                  placeholder="Min"
+                  value={tempFilters.minAge}
+                  onChange={(e) =>
+                    handleTempFilterChange(
+                      "minAge",
+                      e.target.value
+                    )
+                  }
+                />
 
-                    <button
-                      className="cancel-interest"
-                      onClick={closeInterestPopup}
-                    >
-                      Cancel
-                    </button>
+                <span>
+                  to
+                </span>
 
-                    <button
-                      className="send-interest"
-                      onClick={sendInterest}
-                    >
-                      Send Interest ♥
-                    </button>
+                <input
+                  type="number"
+                  placeholder="Max"
+                  value={tempFilters.maxAge}
+                  onChange={(e) =>
+                    handleTempFilterChange(
+                      "maxAge",
+                      e.target.value
+                    )
+                  }
+                />
 
-                  </div>
-                </>
+              </div>
 
-              ) : (
 
-                <>
-                  <div className="interest-success-icon">
-                    ✓
-                  </div>
+              {/* GENDER */}
 
-                  <h2>
-                    Interest Sent!
-                  </h2>
+              <label>
+                Gender
+              </label>
 
-                  <p>
-                    Your interest has been sent successfully
-                    to
-                  </p>
+              <select
+                value={tempFilters.gender}
+                onChange={(e) =>
+                  handleTempFilterChange(
+                    "gender",
+                    e.target.value
+                  )
+                }
+              >
 
-                  <h3>
-                    {selectedProfile.name}
-                  </h3>
+                <option value="">
+                  Any Gender
+                </option>
 
-                  <p className="interest-popup-text">
-                    We'll let you know if they accept your
-                    interest.
-                  </p>
+                <option value="Male">
+                  Male
+                </option>
 
-                  <button
-                    className="send-interest"
-                    onClick={closeInterestPopup}
+                <option value="Female">
+                  Female
+                </option>
+
+              </select>
+
+
+              {/* CITY */}
+
+              <label>
+                City
+              </label>
+
+              <select
+                value={tempFilters.city}
+                onChange={(e) =>
+                  handleTempFilterChange(
+                    "city",
+                    e.target.value
+                  )
+                }
+              >
+
+                <option value="">
+                  Any City
+                </option>
+
+                {cities.map((city) => (
+
+                  <option
+                    key={city}
+                    value={city}
                   >
-                    Done
-                  </button>
-                </>
+                    {city}
+                  </option>
 
-              )}
+                ))}
+
+              </select>
+
+
+              {/* EDUCATION */}
+
+              <label>
+                Education
+              </label>
+
+              <select
+                value={tempFilters.education}
+                onChange={(e) =>
+                  handleTempFilterChange(
+                    "education",
+                    e.target.value
+                  )
+                }
+              >
+
+                <option value="">
+                  Any Education
+                </option>
+
+                {educations.map((education) => (
+
+                  <option
+                    key={education}
+                    value={education}
+                  >
+                    {education}
+                  </option>
+
+                ))}
+
+              </select>
+
+
+              {/* PROFESSION */}
+
+              <label>
+                Profession
+              </label>
+
+              <select
+                value={tempFilters.profession}
+                onChange={(e) =>
+                  handleTempFilterChange(
+                    "profession",
+                    e.target.value
+                  )
+                }
+              >
+
+                <option value="">
+                  Any Profession
+                </option>
+
+                {professions.map((profession) => (
+
+                  <option
+                    key={profession}
+                    value={profession}
+                  >
+                    {profession}
+                  </option>
+
+                ))}
+
+              </select>
+
+
+              {/* RELIGION */}
+
+              <label>
+                Religion / Community
+              </label>
+
+              <select
+                value={tempFilters.religion}
+                onChange={(e) =>
+                  handleTempFilterChange(
+                    "religion",
+                    e.target.value
+                  )
+                }
+              >
+
+                <option value="">
+                  Any Religion
+                </option>
+
+                {religions.map((religion) => (
+
+                  <option
+                    key={religion}
+                    value={religion}
+                  >
+                    {religion}
+                  </option>
+
+                ))}
+
+              </select>
 
             </div>
 
-          </div>
 
-        )}
+            {/* DRAWER FOOTER */}
 
+            <div className="drawer-footer">
 
-        {filterOpen && (
+              <button
+                className="reset-button"
+                onClick={resetFilters}
+              >
+                Reset
+              </button>
 
-          <div
-            className="filter-backdrop"
-            onClick={() => setFilterOpen(false)}
-          >
+              <button
+                className="apply-button"
+                onClick={applyFilters}
+              >
+                Apply Filters
+              </button>
 
-            <aside
-              className="filter-drawer"
-              onClick={(e) => e.stopPropagation()}
-            >
+            </div>
 
-              <div className="drawer-header">
+          </aside>
 
-                <div>
+        </div>
 
-                  <p>REFINE SEARCH</p>
+      )}
 
-                  <h2>Filters</h2>
-
-                </div>
-
-                <button
-                  onClick={() => setFilterOpen(false)}
-                >
-                  ×
-                </button>
-
-              </div>
-
-
-              <div className="filter-content">
-
-                <label>Age Range</label>
-
-                <div className="age-inputs">
-
-                  <input placeholder="21" />
-
-                  <span>to</span>
-
-                  <input placeholder="30" />
-
-                </div>
-
-
-                <label>Height</label>
-
-                <select>
-
-                  <option>Select Height</option>
-
-                  <option>5'0" - 5'4"</option>
-
-                  <option>5'5" - 5'8"</option>
-
-                  <option>5'9" - 6'0"</option>
-
-                  <option>6'0"+</option>
-
-                </select>
-
-
-                <label>Religion</label>
-
-                <select>
-
-                  <option>Any Religion</option>
-
-                  <option>Hindu</option>
-
-                  <option>Muslim</option>
-
-                  <option>Sikh</option>
-
-                  <option>Christian</option>
-
-                </select>
-
-
-                <label>Community</label>
-
-                <select>
-
-                  <option>Any Community</option>
-
-                  <option>General</option>
-
-                  <option>OBC</option>
-
-                  <option>SC</option>
-
-                  <option>ST</option>
-
-                </select>
-
-
-                <label>Education</label>
-
-                <select>
-
-                  <option>Any Education</option>
-
-                  <option>Graduate</option>
-
-                  <option>Post Graduate</option>
-
-                  <option>Doctorate</option>
-
-                </select>
-
-
-                <label>Profession</label>
-
-                <select>
-
-                  <option>Any Profession</option>
-
-                  <option>Engineer</option>
-
-                  <option>Doctor</option>
-
-                  <option>Teacher</option>
-
-                  <option>Business</option>
-
-                </select>
-
-
-                <label>Marital Status</label>
-
-                <select>
-
-                  <option>Never Married</option>
-
-                  <option>Divorced</option>
-
-                  <option>Widowed</option>
-
-                </select>
-
-
-                <div className="check-options">
-
-                  <label className="check-label">
-
-                    <input type="checkbox" />
-
-                    Verified Profiles Only
-
-                  </label>
-
-
-                  <label className="check-label">
-
-                    <input type="checkbox" />
-
-                    Profiles With Photo
-
-                  </label>
-
-                </div>
-
-              </div>
-
-
-              <div className="drawer-footer">
-
-                <button className="reset-button">
-                  Reset
-                </button>
-
-                <button className="apply-button">
-                  Apply Filters
-                </button>
-
-              </div>
-
-            </aside>
-
-          </div>
-
-        )}
-
-      </main>
-    </>
+    </main>
   );
 }
 
