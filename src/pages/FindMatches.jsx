@@ -3,6 +3,8 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 
+const API = "https://sapta-vachan-backend.onrender.com";
+
 function FindMatches() {
   const token = localStorage.getItem("token");
   const decoded = token ? jwtDecode(token) : null;
@@ -53,7 +55,7 @@ function FindMatches() {
 
   const GetUser = () => {
     axios
-      .get("http://localhost:3300/getUser")
+      .get(`${API}/getUser`)
       .then((res) => {
         const myId = decoded?.userId;
 
@@ -202,7 +204,6 @@ function FindMatches() {
     }
 
     setFilteredProfiles(result);
-
   }, [profiles, filters, search]);
 
   // =========================
@@ -257,7 +258,7 @@ function FindMatches() {
     }
 
     axios
-      .post("http://localhost:3300/sendInterest", {
+      .post(`${API}/sendInterest`, {
         sender: decoded.userId,
         receiver: selectedProfile._id,
       })
@@ -455,7 +456,7 @@ function FindMatches() {
                 <img
                   src={
                     profile.image
-                      ? `http://localhost:3300/upload/${profile.image}`
+                      ? `${API}/upload/${profile.image}`
                       : "https://i.pravatar.cc/500?img=47"
                   }
                   alt={profile.name}

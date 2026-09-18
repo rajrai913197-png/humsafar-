@@ -2,6 +2,8 @@ import axios from "axios";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
+const API = "https://sapta-vachan-backend.onrender.com";
+
 const ProfilesDetails = () => {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -16,7 +18,7 @@ const ProfilesDetails = () => {
 
   const GetUserDetail = () => {
     axios
-      .get(`http://localhost:3300/getUserBy/${id}`)
+      .get(`${API}/getUserBy/${id}`)
       .then((res) => {
         console.log("PROFILE DETAIL:", res.data);
         setUserData(res.data);
@@ -134,7 +136,7 @@ const ProfilesDetails = () => {
 
               {profile.image ? (
                 <img
-                  src={`http://localhost:3300/upload/${profile.image}`}
+                  src={`${API}/upload/${profile.image}`}
                   alt={profile.name || "Profile"}
                 />
               ) : (

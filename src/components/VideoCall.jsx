@@ -35,6 +35,13 @@ const VideoCall = ({
     useState("Starting camera...");
 
   // =====================================
+  // BACKEND URL
+  // =====================================
+
+  const API =
+    "https://sapta-vachan-backend.onrender.com";
+
+  // =====================================
   // IMAGE
   // =====================================
 
@@ -49,7 +56,7 @@ const VideoCall = ({
       return person.image;
     }
 
-    return `http://localhost:3300/upload/${person.image}`;
+    return `${API}/upload/${person.image}`;
   };
 
   // =====================================
@@ -703,7 +710,6 @@ const VideoCall = ({
 
       </div>
 
-
       {/* LOCAL VIDEO */}
 
       <div className="local-video">
@@ -717,13 +723,11 @@ const VideoCall = ({
 
       </div>
 
-
       {/* STATUS */}
 
       <div className="call-status">
         {callStatus}
       </div>
-
 
       {/* CONTROLS */}
 
@@ -742,7 +746,6 @@ const VideoCall = ({
             : "🎤"}
         </button>
 
-
         <button
           className={
             `call-control ${
@@ -757,7 +760,6 @@ const VideoCall = ({
             ? "🚫"
             : "📹"}
         </button>
-
 
         <button
           className="end-call"

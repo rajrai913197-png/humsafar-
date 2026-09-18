@@ -2,6 +2,8 @@ import axios from "axios";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+const API = "https://sapta-vachan-backend.onrender.com";
+
 const SignUp = () => {
   const navigate = useNavigate();
 
@@ -24,18 +26,23 @@ const SignUp = () => {
     console.log(sign);
 
     axios
-      .post("http://localhost:3300/createUser", sign)
+      .post(`${API}/createUser`, sign)
       .then(() => {
         alert("Signup successful! Please login.");
         navigate("/login");
       })
-      .catch((err) => console.log(err));
+      .catch((err) => {
+        console.log(err);
+      });
   };
 
   return (
     <div className="signup-container">
 
-      <form className="signup-form" onSubmit={changeSubmit}>
+      <form
+        className="signup-form"
+        onSubmit={changeSubmit}
+      >
 
         <h1>Create Account</h1>
 

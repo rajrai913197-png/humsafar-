@@ -1,117 +1,135 @@
-import axios from "axios"
-import { useState } from "react"
-import { useNavigate } from "react-router-dom"
+import axios from "axios";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
+const API = "https://sapta-vachan-backend.onrender.com";
 
 function Login() {
- const navigate =  useNavigate()
- const [login,setLogin]=useState({
-    email : "",
-    password : ""
-  })
-  const handleChange = (e)=>{
-      setLogin({
-        ...login,
-        [e.target.name] : e.target.value
-      })
-  }
- const handleSubmit = async (e) => {
-  e.preventDefault();
+  const navigate = useNavigate();
 
-  try {
-    const res = await axios.post(
-      "http://localhost:3300/userLogin",
-      login
-    );
+  const [login, setLogin] = useState({
+    email: "",
+    password: "",
+  });
 
-    console.log(res.data);
+  // ================= CHANGE =================
 
-    if (res.data.role) {
-      localStorage.setItem("token", res.data.token);
+  const handleChange = (e) => {
+    setLogin({
+      ...login,
+      [e.target.name]: e.target.value,
+    });
+  };
 
-      if (res.data.role === "admin") {
-        navigate("/admin");
+  // ================= LOGIN =================
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    try {
+      const res = await axios.post(
+        `${API}/userLogin`,
+        login
+      );
+
+      console.log("LOGIN RESPONSE:", res.data);
+
+      if (res.data.role) {
+        // Save JWT token
+        localStorage.setItem(
+          "token",
+          res.data.token
+        );
+
+        // Admin
+        if (res.data.role === "admin") {
+          navigate("/admin");
+        }
+
+        // Normal user
+        else {
+          navigate("/myprofile");
+        }
       } else {
-        navigate("/myprofile");
+        alert("User not found");
       }
-    } else {
-      alert("User not found");
+
+    } catch (err) {
+      console.log("LOGIN ERROR:", err);
+
+      alert(
+        err.response?.data?.message ||
+        "User not found"
+      );
     }
+  };
 
-  } catch (err) {
-    console.log(err);
-
-    alert(
-      err.response?.data?.message ||
-      "User not found "
-    );
-  }
-};
   return (
     <>
-    <div className="login-container">
+      <div className="login-container">
 
-      <form className="login-form" onSubmit={handleSubmit}>
+        <form
+          className="login-form"
+          onSubmit={handleSubmit}
+        >
 
-        <h1>Welcome Back</h1>
+          <h1>
+            Welcome Back
+          </h1>
 
-        <p>Login to your account</p>
+          <p>
+            Login to your account
+          </p>
 
-        <input
+          {/* EMAIL */}
 
-          type="taxt"
+          <input
+            type="email"
+            name="email"
+            placeholder="Enter your email"
+            value={login.email}
+            onChange={handleChange}
+            required
+          />
 
-          name="email"
+          {/* PASSWORD */}
 
-          placeholder="Enter your email"
+          <input
+            type="password"
+            name="password"
+            placeholder="Enter your password"
+            value={login.password}
+            onChange={handleChange}
+            required
+          />
 
-          value={login.email}
+          {/* LOGIN BUTTON */}
 
-          onChange={handleChange}
+          <button type="submit">
+            Login
+          </button>
 
-          required
+          {/* SIGN UP */}
 
-        />
+          <span className="signup-link">
 
-        <input
+            Don't have an account?{" "}
 
-          type="taxt"
-
-          name="password"
-
-          placeholder="Enter your password"
-
-          value={login.password}
-
-          onChange={handleChange}
-
-          required
-
-        />
-
-        <button type="submit" onChange={()=> navigate("/createprofile")}>
-
-          Login
-
-        </button>
-
-        <span className="signup-link">
-
-          Don't have an account?{" "}
-
-          <span onClick={()=> navigate("/signUp")}>
-
-            Sign Up
+            <span
+              onClick={() =>
+                navigate("/signUp")
+              }
+            >
+              Sign Up
+            </span>
 
           </span>
 
-        </span>
+        </form>
 
-      </form>
-
-    </div>
+      </div>
     </>
-  )
+  );
 }
 
-export default Login
+export default Login;

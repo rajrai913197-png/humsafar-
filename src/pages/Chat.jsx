@@ -8,6 +8,8 @@ import IncomingCall from "../components/IncomingCall";
 import VoiceCall from "../components/VoiceCall";
 import VideoCall from "../components/VideoCall";
 
+const API = "https://sapta-vachan-backend.onrender.com";
+
 const Chat = () => {
   const [selectedChat, setSelectedChat] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -62,7 +64,7 @@ const Chat = () => {
       return person.image;
     }
 
-    return `http://localhost:3300/upload/${person.image}`;
+    return `${API}/upload/${person.image}`;
   };
 
   // ==========================================
@@ -76,7 +78,7 @@ const Chat = () => {
     }
 
     axios
-      .get(`http://localhost:3300/myConnections/${myId}`)
+      .get(`${API}/myConnections/${myId}`)
       .then((res) => {
         console.log("CONNECTION RESPONSE:", res.data);
 
@@ -117,7 +119,7 @@ const Chat = () => {
     }
 
     axios
-      .get(`http://localhost:3300/getUserBy/${receiverId}`)
+      .get(`${API}/getUserBy/${receiverId}`)
       .then((res) => {
         console.log("SELECTED USER RESPONSE:", res.data);
 
@@ -152,9 +154,7 @@ const Chat = () => {
     }
 
     axios
-      .get(
-        `http://localhost:3300/messages/${myId}/${receiverId}`
-      )
+      .get(`${API}/messages/${myId}/${receiverId}`)
       .then((res) => {
         console.log("MESSAGES RESPONSE:", res.data);
 
@@ -182,8 +182,9 @@ const Chat = () => {
     }
 
     console.log("STARTING SOCKET...");
+    console.log("SOCKET SERVER:", API);
 
-    const socket = io("http://localhost:3300", {
+    const socket = io(API, {
       transports: ["websocket"],
       withCredentials: true,
     });
@@ -283,10 +284,7 @@ const Chat = () => {
         return;
       }
 
-      // IMPORTANT:
-      // video par filter nahi lagana.
-      // voice + video dono yaha aayenge.
-
+      // Voice + Video dono yaha aayenge
       setIncomingCall(data);
 
       // Agar hum khud kisi call mein hain
@@ -393,10 +391,7 @@ const Chat = () => {
     };
 
     axios
-      .post(
-        "http://localhost:3300/sendMessage",
-        messageData
-      )
+      .post(`${API}/sendMessage`, messageData)
       .then((res) => {
         console.log("MESSAGE SAVED:", res.data);
 

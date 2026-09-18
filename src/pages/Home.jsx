@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 
 function Home() {
+   const API = "https://sapta-vachan-backend.onrender.com";
   const [profiles, setProfiles] = useState([]);
   const [age, setAge] = useState([]);
   const [city, setCity] = useState([]);
@@ -36,7 +37,7 @@ function Home() {
 
   const getAge = () => {
     axios
-      .get("http://localhost:3300/ageGet")
+      .get(`${API}/ageGet`)
       .then((res) => setAge(res.data))
       .catch((err) => console.log(err));
   };
@@ -47,7 +48,7 @@ function Home() {
 
   const getCity = () => {
     axios
-      .get("http://localhost:3300/getcity")
+      .get(`${API}/getcity`)
       .then((res) => setCity(res.data))
       .catch((err) => console.log(err));
   };
@@ -58,7 +59,7 @@ function Home() {
 
   const GetGender = () => {
     axios
-      .get("http://localhost:3300/getgender")
+      .get(`${API}/getgender`)
       .then((res) => setGender(res.data))
       .catch((err) => console.log(err));
   };
@@ -69,7 +70,7 @@ function Home() {
 
   const Getcommunity = () => {
     axios
-      .get("http://localhost:3300/community")
+      .get(`${API}/community`)
       .then((res) => setCommunity(res.data))
       .catch((err) => console.log(err));
   };
@@ -86,7 +87,7 @@ function Home() {
       profileFilter.city.length > 0
     ) {
       axios
-        .get("http://localhost:3300/filterUser", {
+        .get(`${API}/filterUser`, {
           params: profileFilter,
           paramsSerializer: {
             indexes: null,
@@ -102,7 +103,7 @@ function Home() {
         .catch((err) => console.log(err));
     } else {
       axios
-        .get("http://localhost:3300/getUser")
+        .get(`${API}/getUser`)
         .then((res) => {
           const otherProfiles = res.data.filter(
             (profile) => profile._id !== myId
@@ -193,7 +194,7 @@ function Home() {
     }
 
     axios
-      .post("http://localhost:3300/sendInterest", {
+      .post(`${API}/sendInterest`, {
         sender: decoded.userId,
         receiver: selectedProfile._id,
       })
@@ -427,7 +428,7 @@ function Home() {
                 <img
                   src={
                     profile.image
-                      ? `http://localhost:3300/upload/${profile.image}`
+                      ? `${API}/upload/${profile.image}`
                       : "https://i.pravatar.cc/500?img=47"
                   }
                   alt={profile.name}

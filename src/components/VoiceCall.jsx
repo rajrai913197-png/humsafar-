@@ -33,6 +33,12 @@ const VoiceCall = ({ user, socket, onClose }) => {
   const myId = decoded?.userId;
   const receiverId = user?._id;
 
+  // =====================================
+  // BACKEND URL
+  // =====================================
+
+  const API =
+    "https://sapta-vachan-backend.onrender.com";
 
   // =====================================
   // IMAGE
@@ -48,9 +54,8 @@ const VoiceCall = ({ user, socket, onClose }) => {
       return person.image;
     }
 
-    return `http://localhost:3300/upload/${person.image}`;
+    return `${API}/upload/${person.image}`;
   };
-
 
   // =====================================
   // CREATE PEER
@@ -71,7 +76,6 @@ const VoiceCall = ({ user, socket, onClose }) => {
       });
 
     peerRef.current = peer;
-
 
     // =================================
     // ICE CANDIDATE
@@ -100,11 +104,8 @@ const VoiceCall = ({ user, socket, onClose }) => {
               event.candidate,
           }
         );
-
       }
-
     };
-
 
     // =================================
     // REMOTE AUDIO
@@ -145,11 +146,8 @@ const VoiceCall = ({ user, socket, onClose }) => {
             );
 
           });
-
       }
-
     };
-
 
     // =================================
     // CONNECTION STATE
@@ -170,7 +168,6 @@ const VoiceCall = ({ user, socket, onClose }) => {
         setCallStatus(
           "Connected"
         );
-
       }
 
       if (
@@ -183,14 +180,11 @@ const VoiceCall = ({ user, socket, onClose }) => {
         console.log(
           "❌ WEBRTC CONNECTION LOST"
         );
-
       }
-
     };
 
     return peer;
   };
-
 
   // =====================================
   // START CALL
@@ -227,11 +221,9 @@ const VoiceCall = ({ user, socket, onClose }) => {
         return;
       }
 
-
       setCallStatus(
         "Connecting..."
       );
-
 
       console.log(
         "📞 STARTING VOICE CALL"
@@ -246,7 +238,6 @@ const VoiceCall = ({ user, socket, onClose }) => {
         "RECEIVER ID:",
         receiverId
       );
-
 
       // =================================
       // MICROPHONE
@@ -265,14 +256,12 @@ const VoiceCall = ({ user, socket, onClose }) => {
         "🎤 MICROPHONE READY"
       );
 
-
       // =================================
       // PEER
       // =================================
 
       const peer =
         createPeer();
-
 
       // =================================
       // ADD AUDIO TRACK
@@ -286,9 +275,7 @@ const VoiceCall = ({ user, socket, onClose }) => {
             track,
             stream
           );
-
         });
-
 
       // =================================
       // CREATE OFFER
@@ -304,7 +291,6 @@ const VoiceCall = ({ user, socket, onClose }) => {
       console.log(
         "📨 OFFER CREATED"
       );
-
 
       // =================================
       // SEND CALL
@@ -361,12 +347,9 @@ const VoiceCall = ({ user, socket, onClose }) => {
         setCallStatus(
           "Unable to start call"
         );
-
       }
-
     }
   };
-
 
   // =====================================
   // ADD PENDING ICE
@@ -407,15 +390,12 @@ const VoiceCall = ({ user, socket, onClose }) => {
             "❌ BUFFERED ICE ERROR:",
             error
           );
-
         }
-
       }
 
       pendingIceCandidatesRef.current =
         [];
     };
-
 
   // =====================================
   // CLEANUP
@@ -426,7 +406,6 @@ const VoiceCall = ({ user, socket, onClose }) => {
     console.log(
       "🧹 CLEANING VOICE CALL"
     );
-
 
     // Stop microphone
 
@@ -444,7 +423,6 @@ const VoiceCall = ({ user, socket, onClose }) => {
         null;
     }
 
-
     // Close WebRTC
 
     if (peerRef.current) {
@@ -455,14 +433,11 @@ const VoiceCall = ({ user, socket, onClose }) => {
         null;
     }
 
-
     pendingIceCandidatesRef.current =
       [];
 
     setMuted(false);
-
   };
-
 
   // =====================================
   // SOCKET EVENTS
@@ -482,7 +457,6 @@ const VoiceCall = ({ user, socket, onClose }) => {
     console.log(
       "📞 VOICE CALL USING CHAT SOCKET"
     );
-
 
     // =================================
     // CALL ACCEPTED
@@ -520,7 +494,6 @@ const VoiceCall = ({ user, socket, onClose }) => {
             return;
           }
 
-
           // Set remote answer
 
           await peerRef.current
@@ -534,11 +507,9 @@ const VoiceCall = ({ user, socket, onClose }) => {
             "✅ REMOTE ANSWER SET"
           );
 
-
           // Add buffered ICE
 
           await addPendingIceCandidates();
-
 
           setCallStatus(
             "Connected"
@@ -554,10 +525,8 @@ const VoiceCall = ({ user, socket, onClose }) => {
           setCallStatus(
             "Unable to connect"
           );
-
         }
       };
-
 
     // =================================
     // ICE RECEIVED
@@ -574,7 +543,6 @@ const VoiceCall = ({ user, socket, onClose }) => {
             return;
           }
 
-
           if (
             !peerRef.current
           ) {
@@ -585,7 +553,6 @@ const VoiceCall = ({ user, socket, onClose }) => {
 
             return;
           }
-
 
           // Remote description available
 
@@ -618,7 +585,6 @@ const VoiceCall = ({ user, socket, onClose }) => {
               .push(
                 data.candidate
               );
-
           }
 
         } catch (error) {
@@ -627,10 +593,8 @@ const VoiceCall = ({ user, socket, onClose }) => {
             "❌ ICE ERROR:",
             error
           );
-
         }
       };
-
 
     // =================================
     // CALL REJECTED
@@ -654,9 +618,7 @@ const VoiceCall = ({ user, socket, onClose }) => {
           onClose();
 
         }, 1500);
-
       };
-
 
     // =================================
     // CALL ENDED
@@ -680,9 +642,7 @@ const VoiceCall = ({ user, socket, onClose }) => {
           onClose();
 
         }, 500);
-
       };
-
 
     // =================================
     // REGISTER EVENTS
@@ -708,7 +668,6 @@ const VoiceCall = ({ user, socket, onClose }) => {
       handleCallEnded
     );
 
-
     // =================================
     // START CALL
     // =================================
@@ -727,9 +686,7 @@ const VoiceCall = ({ user, socket, onClose }) => {
         "connect",
         startCall
       );
-
     }
-
 
     // =================================
     // CLEANUP SOCKET LISTENERS
@@ -761,11 +718,9 @@ const VoiceCall = ({ user, socket, onClose }) => {
         "connect",
         startCall
       );
-
     };
 
   }, [socket, receiverId]);
-
 
   // =====================================
   // MUTE
@@ -794,15 +749,12 @@ const VoiceCall = ({ user, socket, onClose }) => {
       !audioTrack.enabled
     );
 
-
     console.log(
       audioTrack.enabled
         ? "🎤 UNMUTED"
         : "🔇 MUTED"
     );
-
   };
-
 
   // =====================================
   // END CALL
@@ -813,7 +765,6 @@ const VoiceCall = ({ user, socket, onClose }) => {
     console.log(
       "📴 ENDING CALL"
     );
-
 
     if (
       socket &&
@@ -827,16 +778,12 @@ const VoiceCall = ({ user, socket, onClose }) => {
             String(receiverId),
         }
       );
-
     }
-
 
     cleanup();
 
     onClose();
-
   };
-
 
   // =====================================
   // UI
@@ -852,7 +799,6 @@ const VoiceCall = ({ user, socket, onClose }) => {
         ref={remoteAudioRef}
         autoPlay
       />
-
 
       {/* USER */}
 
@@ -872,19 +818,16 @@ const VoiceCall = ({ user, socket, onClose }) => {
 
         </div>
 
-
         <h2>
           {user?.name ||
             "User"}
         </h2>
-
 
         <p>
           {callStatus}
         </p>
 
       </div>
-
 
       {/* ACTIONS */}
 
@@ -909,7 +852,6 @@ const VoiceCall = ({ user, socket, onClose }) => {
             : "🎤"}
 
         </button>
-
 
         {/* END */}
 

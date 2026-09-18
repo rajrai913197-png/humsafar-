@@ -4,6 +4,7 @@ import { jwtDecode } from "jwt-decode";
 import { useNavigate } from "react-router-dom";
 
 const Interests = () => {
+  const API = "https://sapta-vachan-backend.onrender.com";
   const [activeTab, setActiveTab] = useState("received");
   const [received, setReceived] = useState([]);
   const [matches, setMatches] = useState([]);
@@ -27,7 +28,7 @@ const Interests = () => {
     if (!userId) return;
 
     axios
-      .get(`http://localhost:3300/receivedInterests/${userId}`)
+      .get(`${API}/receivedInterests/${userId}`)
       .then((res) => {
         console.log("Received:", res.data);
         setReceived(res.data.interests);
@@ -41,7 +42,7 @@ const Interests = () => {
     if (!userId) return;
 
     axios
-      .get(`http://localhost:3300/myConnections/${userId}`)
+      .get(`${API}/myConnections/${userId}`)
       .then((res) => {
         console.log("Connections:", res.data);
         setMatches(res.data.connections);
@@ -58,7 +59,7 @@ const Interests = () => {
 
   const handleAccept = (interestId) => {
     axios
-      .put(`http://localhost:3300/acceptInterest/${interestId}`)
+      .put(`${API}/acceptInterest/${interestId}`)
       .then((res) => {
         console.log(res.data);
 
@@ -75,7 +76,7 @@ const Interests = () => {
 
   const handleReject = (interestId) => {
     axios
-      .put(`http://localhost:3300/rejectInterest/${interestId}`)
+      .put(`${API}/rejectInterest/${interestId}`)
       .then((res) => {
         console.log(res.data);
 
@@ -207,7 +208,7 @@ const Interests = () => {
                         <img
                           src={
                             person?.image
-                              ? `http://localhost:3300/upload/${person.image}`
+                              ? `${API}/upload/${person.image}`
                               : "https://i.pravatar.cc/500?img=47"
                           }
                           alt={person?.name}
@@ -354,7 +355,7 @@ const Interests = () => {
                         <img
                           src={
                             person.image
-                              ? `http://localhost:3300/upload/${person.image}`
+                              ? `${API}/upload/${person.image}`
                               : "https://i.pravatar.cc/500?img=25"
                           }
                           alt={person.name}

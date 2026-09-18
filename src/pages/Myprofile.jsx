@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import { jwtDecode } from "jwt-decode";
 import { useNavigate } from "react-router-dom";
 
+const API = "https://sapta-vachan-backend.onrender.com";
+
 const MyProfile = () => {
   const navigate = useNavigate();
 
@@ -33,7 +35,7 @@ const MyProfile = () => {
 
     try {
       const res = await axios.get(
-        `http://localhost:3300/getProfile/${id}`
+        `${API}/getProfile/${id}`
       );
 
       console.log("PROFILE DATA:", res.data);
@@ -109,7 +111,7 @@ const MyProfile = () => {
         className="my-profile-back-btn"
         onClick={() => navigate(-1)}
       >
-        ← Back 
+        ← Back
       </button>
 
       {/* =================================
@@ -171,7 +173,7 @@ const MyProfile = () => {
 
             {profile.image ? (
               <img
-                src={`http://localhost:3300/upload/${profile.image}`}
+                src={`${API}/upload/${profile.image}`}
                 alt={profile.name || "Profile"}
               />
             ) : (
@@ -367,7 +369,7 @@ const MyProfile = () => {
 
             {profile.image ? (
               <img
-                src={`http://localhost:3300/upload/${profile.image}`}
+                src={`${API}/upload/${profile.image}`}
                 alt={profile.name || "Profile"}
               />
             ) : (
@@ -636,6 +638,7 @@ const MyProfile = () => {
             <h2>
               Family Details
             </h2>
+
           </div>
 
         </div>
@@ -691,6 +694,7 @@ const MyProfile = () => {
             <h2>
               Account Information
             </h2>
+
           </div>
 
         </div>

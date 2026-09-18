@@ -30,6 +30,13 @@ const IncomingCall = ({
     useRef([]);
 
   // =====================================
+  // BACKEND URL
+  // =====================================
+
+  const API =
+    "https://sapta-vachan-backend.onrender.com";
+
+  // =====================================
   // CALL TYPE
   // =====================================
 
@@ -51,7 +58,7 @@ const IncomingCall = ({
       return call.callerImage;
     }
 
-    return `http://localhost:3300/upload/${call.callerImage}`;
+    return `${API}/upload/${call.callerImage}`;
   };
 
   // =====================================

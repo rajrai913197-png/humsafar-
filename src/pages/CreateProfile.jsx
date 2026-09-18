@@ -3,6 +3,8 @@ import axios from "axios";
 import { jwtDecode } from "jwt-decode";
 import { useNavigate } from "react-router-dom";
 
+const API = "https://sapta-vachan-backend.onrender.com";
+
 const CreateProfile = () => {
   const navigate = useNavigate();
 
@@ -49,7 +51,7 @@ const CreateProfile = () => {
 
     try {
       const res = await axios.get(
-        `http://localhost:3300/getProfile/${id}`
+        `${API}/getProfile/${id}`
       );
 
       console.log("EDIT PROFILE DATA:", res.data);
@@ -74,11 +76,14 @@ const CreateProfile = () => {
 
       if (user.image) {
         setExistingImage(
-          `http://localhost:3300/upload/${user.image}`
+          `${API}/upload/${user.image}`
         );
       }
     } catch (error) {
-      console.log("GET PROFILE ERROR:", error);
+      console.log(
+        "GET PROFILE ERROR:",
+        error.response?.data || error.message
+      );
     }
   };
 
@@ -143,17 +148,22 @@ const CreateProfile = () => {
 
     data.append("fatherName", formData.fatherName);
     data.append("motherName", formData.motherName);
+
     data.append(
       "familyBackground",
       formData.familyBackground
     );
-    data.append("siblings", formData.siblings);
+
+    data.append(
+      "siblings",
+      formData.siblings
+    );
 
     console.log("USER ID:", id);
 
     try {
       const res = await axios.put(
-        `http://localhost:3300/userProfile/${id}`,
+        `${API}/userProfile/${id}`,
         data,
         {
           headers: {
@@ -162,11 +172,18 @@ const CreateProfile = () => {
         }
       );
 
-      console.log("PROFILE UPDATED:", res.data);
+      console.log(
+        "PROFILE UPDATED:",
+        res.data
+      );
 
       navigate("/myprofile");
     } catch (error) {
-      console.log("UPDATE PROFILE ERROR:", error);
+      console.log(
+        "UPDATE PROFILE ERROR:",
+        error.response?.data ||
+          error.message
+      );
     }
   };
 
@@ -408,7 +425,10 @@ const CreateProfile = () => {
 
                   <img
                     src={existingImage}
-                    alt={formData.name || "Profile"}
+                    alt={
+                      formData.name ||
+                      "Profile"
+                    }
                   />
 
                 </div>
