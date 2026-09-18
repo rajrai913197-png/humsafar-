@@ -1,60 +1,38 @@
-import { Link, useNavigate } from "react-router-dom";
-import logo from "../assets/icons/saptavachan2.png";
-import { useState } from "react";
-import { jwtDecode } from "jwt-decode";
+import { Link, useNavigate } from "react-router-dom"
+import logo from "../assets/icons/saptavachan2.png"
+import { useState } from "react"
+import { jwtDecode } from "jwt-decode"
 
 function Navbar() {
-  const token = localStorage.getItem("token");
+  const token = localStorage.getItem("token")
+  const decoded = token ? jwtDecode(token) : null
 
-  let decoded = null;
+  const [show, setShow] = useState(false)
+  const navigate = useNavigate()
 
-  try {
-    decoded = token ? jwtDecode(token) : null;
-  } catch (error) {
-    console.log("Invalid token");
+  // Menu close karne ke liye
+  const closeMenu = () => {
+    setShow(false)
   }
 
-  const [show, setShow] = useState(false);
-  const navigate = useNavigate();
-
-  // Close menu
-  const closeMenu = () => {
-    setShow(false);
-  };
-
   const handleProfileClick = (e) => {
-    e.preventDefault();
+    e.preventDefault()
 
-    setShow(false);
+    setShow(false)
 
     if (decoded?.role === "admin") {
-      navigate("/admin");
+      navigate("/admin")
     } else {
-      navigate("/myprofile");
+      navigate("/myprofile")
     }
-  };
+  }
 
   return (
     <>
-      {/* ================= NAVBAR ================= */}
-
       <nav className="navbar">
 
-        {/* Logo */}
-        <Link
-          to="/home"
-          className="navbar-logo"
-          onClick={closeMenu}
-        >
-          <img
-            src={logo}
-            alt="Sapta Vachan"
-            className="logo"
-          />
-        </Link>
+        <img src={logo} alt="" className="logo" />
 
-
-        {/* Desktop Links */}
         <div className="navLinks">
 
           <Link to="/home">
@@ -81,33 +59,23 @@ function Navbar() {
 
 
         {/* Profile Icon */}
+
         <Link
           to="/myprofile"
           className="icon-profile"
           onClick={handleProfileClick}
-          title={
-            decoded?.role === "admin"
-              ? "Admin Panel"
-              : "My Profile"
-          }
         >
           <i className="fa-solid fa-circle-user"></i>
         </Link>
 
 
         {/* Hamburger */}
+
         <button
           onClick={() => setShow(!show)}
-          className={`homebuger ${show ? "active" : ""}`}
-          aria-label="Toggle menu"
+          className="homebuger"
         >
-          <i
-            className={
-              show
-                ? "fa-solid fa-xmark"
-                : "fa-solid fa-bars"
-            }
-          ></i>
+          <i className="fa-solid fa-bars"></i>
         </button>
 
       </nav>
@@ -116,112 +84,78 @@ function Navbar() {
       {/* ================= MOBILE MENU ================= */}
 
       {show && (
-        <>
-          {/* Overlay */}
-          <div
-            className="menu-overlay"
+        <div className="navLinks-home">
+
+          {/* Close Button */}
+
+          <button
+            className="menu-close"
             onClick={closeMenu}
-          ></div>
+          >
+            <i className="fa-solid fa-xmark"></i>
+          </button>
 
 
-          {/* Drawer */}
-          <div className="navLinks-home">
-
-            <div className="drawer-header">
-
-              <div>
-                <span className="drawer-title">
-                  Sapta Vachan
-                </span>
-
-                <span className="drawer-subtitle">
-                  Seven vows. One lifetime.
-                </span>
-              </div>
-
-              <button
-                className="drawer-close"
-                onClick={closeMenu}
-              >
-                <i className="fa-solid fa-xmark"></i>
-              </button>
-
-            </div>
+          <Link
+            to="/home"
+            className="bugerLinks"
+            onClick={closeMenu}
+          >
+            Home
+          </Link>
 
 
-            <div className="drawer-links">
-
-              <Link
-                to="/home"
-                className="bugerLinks"
-                onClick={closeMenu}
-              >
-                <i className="fa-solid fa-house"></i>
-                <span>Home</span>
-              </Link>
+          <Link
+            to="/findmatches"
+            className="bugerLinks"
+            onClick={closeMenu}
+          >
+            Find Matches
+          </Link>
 
 
-              <Link
-                to="/findmatches"
-                className="bugerLinks"
-                onClick={closeMenu}
-              >
-                <i className="fa-solid fa-heart"></i>
-                <span>Find Matches</span>
-              </Link>
+          <Link
+            to="/interests"
+            className="bugerLinks"
+            onClick={closeMenu}
+          >
+            Interests
+          </Link>
 
 
-              <Link
-                to="/interests"
-                className="bugerLinks"
-                onClick={closeMenu}
-              >
-                <i className="fa-solid fa-star"></i>
-                <span>Interests</span>
-              </Link>
+          <Link
+            to="/messages"
+            className="bugerLinks"
+            onClick={closeMenu}
+          >
+            Messages
+          </Link>
 
 
-              <Link
-                to="/messages"
-                className="bugerLinks"
-                onClick={closeMenu}
-              >
-                <i className="fa-solid fa-message"></i>
-                <span>Messages</span>
-              </Link>
+          <Link
+            to="/notification"
+            id="bugerLinksStyle"
+            onClick={closeMenu}
+          >
+            Notification
+          </Link>
 
 
-              <Link
-                to="/notification"
-                className="bugerLinks"
-                onClick={closeMenu}
-              >
-                <i className="fa-solid fa-bell"></i>
-                <span>Notification</span>
-              </Link>
+          <Link
+            to="/myprofile"
+            className="icon-profile-new"
+            id="bugerLinksStyle2"
+            onClick={handleProfileClick}
+          >
+            {decoded?.role === "admin"
+              ? "Admin Panel"
+              : "My Profile"}
+          </Link>
 
-
-              {/* Profile */}
-              <button
-                className="bugerLinks profile-menu-btn"
-                onClick={handleProfileClick}
-              >
-                <i className="fa-solid fa-circle-user"></i>
-
-                <span>
-                  {decoded?.role === "admin"
-                    ? "Admin Panel"
-                    : "My Profile"}
-                </span>
-              </button>
-
-            </div>
-
-          </div>
-        </>
+        </div>
       )}
     </>
-  );
+  )
 }
 
-export default Navbar;
+export default Navbar
