@@ -109,7 +109,7 @@ const MyProfile = () => {
       <button
         type="button"
         className="my-profile-back-btn"
-        onClick={() => navigate(-1)}
+        onClick={() => navigate("/home")}
       >
         ← Back
       </button>
