@@ -7,7 +7,14 @@ const API = "https://sapta-vachan-backend.onrender.com";
 
 function FindMatches() {
   const token = localStorage.getItem("token");
-  const decoded = token ? jwtDecode(token) : null;
+
+  let decoded = null;
+
+  try {
+    decoded = token ? jwtDecode(token) : null;
+  } catch (error) {
+    console.log("TOKEN DECODE ERROR:", error);
+  }
 
   const navigate = useNavigate();
 
@@ -20,14 +27,11 @@ function FindMatches() {
   const [interestSent, setInterestSent] = useState({});
   const [interestSuccess, setInterestSuccess] = useState(false);
 
-  // Search
   const [search, setSearch] = useState("");
 
-  // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const profilesPerPage = 10;
 
-  // Filter state
   const [filters, setFilters] = useState({
     minAge: "",
     maxAge: "",
@@ -38,7 +42,6 @@ function FindMatches() {
     religion: "",
   });
 
-  // Temporary filter state
   const [tempFilters, setTempFilters] = useState({
     minAge: "",
     maxAge: "",
@@ -49,39 +52,55 @@ function FindMatches() {
     religion: "",
   });
 
-  // =========================
-  // GET USERS
-  // =========================
+  // =====================================================
+  // GET USERS FROM BACKEND
+  // =====================================================
 
   const GetUser = () => {
     axios
       .get(`${API}/getUser`)
       .then((res) => {
-        const myId = decoded?.userId;
-
-        console.log("My ID:", myId);
+        console.log("GET USER STATUS:", res.status);
         console.log("ALL USERS:", res.data);
 
-        // Current logged-in user ko remove karna
-        const otherProfiles = res.data.filter(
-          (profile) => profile._id !== myId
-        );
+        const myId = decoded?.userId?.toString();
 
-        console.log("OTHER PROFILES:", otherProfiles);
+        console.log("MY ID:", myId);
 
-        // Cloudinary image URL check
-        otherProfiles.forEach((profile) => {
+        // Debug: backend se image exactly kya aa rahi hai
+        res.data.forEach((profile) => {
           console.log(
-            `IMAGE - ${profile.name}:`,
+            "PROFILE:",
+            profile.name,
+            "IMAGE:",
             profile.image
           );
         });
+
+        // Current logged-in user ko remove karo
+        const otherProfiles = res.data.filter(
+          (profile) =>
+            profile._id?.toString() !== myId
+        );
+
+        console.log(
+          "OTHER PROFILES:",
+          otherProfiles
+        );
 
         setProfiles(otherProfiles);
         setFilteredProfiles(otherProfiles);
       })
       .catch((err) => {
-        console.log("GET USERS ERROR:", err);
+        console.log(
+          "GET USERS ERROR:",
+          err
+        );
+
+        console.log(
+          "ERROR RESPONSE:",
+          err.response?.data
+        );
       });
   };
 
@@ -89,37 +108,40 @@ function FindMatches() {
     GetUser();
   }, []);
 
-  // =========================
+  // =====================================================
   // SEARCH + FILTER
-  // =========================
+  // =====================================================
 
   useEffect(() => {
     let result = [...profiles];
 
-    // =========================
     // SEARCH
-    // =========================
-
     if (search.trim()) {
-      const searchValue = search.toLowerCase();
+      const searchValue =
+        search.toLowerCase();
 
       result = result.filter((profile) => {
         return (
           profile.name
             ?.toLowerCase()
             .includes(searchValue) ||
+
           profile.city
             ?.toLowerCase()
             .includes(searchValue) ||
+
           profile.education
             ?.toLowerCase()
             .includes(searchValue) ||
+
           profile.profession
             ?.toLowerCase()
             .includes(searchValue) ||
+
           profile.religion
             ?.toLowerCase()
             .includes(searchValue) ||
+
           profile.gender
             ?.toLowerCase()
             .includes(searchValue)
@@ -127,10 +149,7 @@ function FindMatches() {
       });
     }
 
-    // =========================
-    // MINIMUM AGE
-    // =========================
-
+    // MIN AGE
     if (filters.minAge) {
       result = result.filter(
         (profile) =>
@@ -139,10 +158,7 @@ function FindMatches() {
       );
     }
 
-    // =========================
-    // MAXIMUM AGE
-    // =========================
-
+    // MAX AGE
     if (filters.maxAge) {
       result = result.filter(
         (profile) =>
@@ -151,10 +167,7 @@ function FindMatches() {
       );
     }
 
-    // =========================
     // GENDER
-    // =========================
-
     if (filters.gender) {
       result = result.filter(
         (profile) =>
@@ -163,10 +176,7 @@ function FindMatches() {
       );
     }
 
-    // =========================
     // CITY
-    // =========================
-
     if (filters.city) {
       result = result.filter(
         (profile) =>
@@ -175,10 +185,7 @@ function FindMatches() {
       );
     }
 
-    // =========================
     // EDUCATION
-    // =========================
-
     if (filters.education) {
       result = result.filter(
         (profile) =>
@@ -187,10 +194,7 @@ function FindMatches() {
       );
     }
 
-    // =========================
     // PROFESSION
-    // =========================
-
     if (filters.profession) {
       result = result.filter(
         (profile) =>
@@ -199,10 +203,7 @@ function FindMatches() {
       );
     }
 
-    // =========================
     // RELIGION
-    // =========================
-
     if (filters.religion) {
       result = result.filter(
         (profile) =>
@@ -214,23 +215,24 @@ function FindMatches() {
     setFilteredProfiles(result);
   }, [profiles, filters, search]);
 
-  // =========================
+  // =====================================================
   // RESET PAGE
-  // =========================
+  // =====================================================
 
   useEffect(() => {
     setCurrentPage(1);
   }, [filters, search]);
 
-  // =========================
+  // =====================================================
   // PAGINATION
-  // =========================
+  // =====================================================
 
   const indexOfLastProfile =
     currentPage * profilesPerPage;
 
   const indexOfFirstProfile =
-    indexOfLastProfile - profilesPerPage;
+    indexOfLastProfile -
+    profilesPerPage;
 
   const currentProfiles =
     filteredProfiles.slice(
@@ -243,9 +245,9 @@ function FindMatches() {
       profilesPerPage
   );
 
-  // =========================
+  // =====================================================
   // INTEREST
-  // =========================
+  // =====================================================
 
   const handleInterest = (profile) => {
     if (interestSent[profile._id]) {
@@ -261,6 +263,10 @@ function FindMatches() {
       !decoded?.userId ||
       !selectedProfile?._id
     ) {
+      console.log(
+        "USER ID OR PROFILE ID MISSING"
+      );
+
       return;
     }
 
@@ -270,7 +276,10 @@ function FindMatches() {
         receiver: selectedProfile._id,
       })
       .then((res) => {
-        console.log("INTEREST RESPONSE:", res.data);
+        console.log(
+          "INTEREST RESPONSE:",
+          res.data
+        );
 
         setInterestSent((prev) => ({
           ...prev,
@@ -304,9 +313,9 @@ function FindMatches() {
     setInterestSuccess(false);
   };
 
-  // =========================
+  // =====================================================
   // FILTER FUNCTIONS
-  // =========================
+  // =====================================================
 
   const handleTempFilterChange = (
     field,
@@ -339,9 +348,9 @@ function FindMatches() {
     setCurrentPage(1);
   };
 
-  // =========================
+  // =====================================================
   // UNIQUE VALUES
-  // =========================
+  // =====================================================
 
   const cities = [
     ...new Set(
@@ -374,6 +383,10 @@ function FindMatches() {
         .filter(Boolean)
     ),
   ];
+
+  // =====================================================
+  // RETURN
+  // =====================================================
 
   return (
     <main className="find-page">
@@ -472,12 +485,22 @@ function FindMatches() {
                       : "https://i.pravatar.cc/500?img=47"
                   }
                   alt={
-                    profile.name || "Profile"
+                    profile.name ||
+                    "Profile"
                   }
+                  onLoad={() => {
+                    console.log(
+                      "CLOUDINARY IMAGE LOADED:",
+                      profile.name,
+                      profile.image,
+                      console.log(profile.image)
+                    );
+                  }}
                   onError={(e) => {
                     console.log(
-                      "IMAGE LOAD ERROR:",
-                      e.currentTarget.src
+                      "CLOUDINARY IMAGE ERROR:",
+                      profile.name,
+                      profile.image
                     );
 
                     e.currentTarget.src =
@@ -624,8 +647,6 @@ function FindMatches() {
 
         <div className="pagination">
 
-          {/* PREVIOUS */}
-
           <button
             disabled={currentPage === 1}
             onClick={() =>
@@ -636,8 +657,6 @@ function FindMatches() {
           >
             ← Previous
           </button>
-
-          {/* PAGE NUMBERS */}
 
           {Array.from(
             { length: totalPages },
@@ -662,8 +681,6 @@ function FindMatches() {
 
             )
           )}
-
-          {/* NEXT */}
 
           <button
             disabled={

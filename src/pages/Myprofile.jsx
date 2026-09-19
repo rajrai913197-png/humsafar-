@@ -11,6 +11,10 @@ const MyProfile = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [profile, setProfile] = useState({});
 
+  // ================================
+  // GET TOKEN + USER ID
+  // ================================
+
   const token = localStorage.getItem("token");
 
   let id = null;
@@ -19,9 +23,12 @@ const MyProfile = () => {
     if (token) {
       const decoded = jwtDecode(token);
       id = decoded?.userId;
+
+      console.log("MY PROFILE USER ID:", id);
     }
   } catch (error) {
     console.log("TOKEN DECODE ERROR:", error);
+
     localStorage.removeItem("token");
     navigate("/login");
   }
@@ -31,7 +38,10 @@ const MyProfile = () => {
   // ================================
 
   const getProfile = async () => {
-    if (!id) return;
+    if (!id) {
+      console.log("USER ID NOT FOUND");
+      return;
+    }
 
     try {
       const res = await axios.get(
@@ -39,7 +49,10 @@ const MyProfile = () => {
       );
 
       console.log("PROFILE DATA:", res.data);
-      console.log("IMAGE URL:", res.data.image);
+      console.log(
+        "CLOUDINARY IMAGE URL:",
+        res.data.image
+      );
 
       setProfile(res.data);
 
@@ -177,14 +190,33 @@ const MyProfile = () => {
           <div className="sidebar-avatar">
 
             {profile.image ? (
+
               <img
                 src={profile.image}
                 alt={profile.name || "Profile"}
+                onLoad={() => {
+                  console.log(
+                    "SIDEBAR CLOUDINARY IMAGE LOADED:",
+                    profile.image
+                  );
+                }}
+                onError={(e) => {
+                  console.log(
+                    "SIDEBAR CLOUDINARY IMAGE ERROR:",
+                    profile.image
+                  );
+
+                  e.currentTarget.style.display =
+                    "none";
+                }}
               />
+
             ) : (
+
               profile.name
                 ? profile.name.charAt(0).toUpperCase()
                 : "U"
+
             )}
 
           </div>
@@ -348,7 +380,7 @@ const MyProfile = () => {
             Edit Profile
           </button>
 
-          {/* MY PROFILE HAMBURGER */}
+          {/* HAMBURGER */}
 
           <button
             className="menu-btn"
@@ -373,16 +405,37 @@ const MyProfile = () => {
           <div className="profile-photo">
 
             {profile.image ? (
+
               <img
                 src={profile.image}
                 alt={profile.name || "Profile"}
+                onLoad={() => {
+                  console.log(
+                    "MAIN CLOUDINARY IMAGE LOADED:",
+                    profile.image
+                  );
+                }}
+                onError={(e) => {
+                  console.log(
+                    "MAIN CLOUDINARY IMAGE ERROR:",
+                    profile.image
+                  );
+
+                  e.currentTarget.style.display =
+                    "none";
+                }}
               />
+
             ) : (
+
               <span>
                 {profile.name
-                  ? profile.name.charAt(0).toUpperCase()
+                  ? profile.name
+                      .charAt(0)
+                      .toUpperCase()
                   : "U"}
               </span>
+
             )}
 
           </div>
@@ -489,6 +542,7 @@ const MyProfile = () => {
           </div>
 
           <div>
+
             <p>
               GET TO KNOW ME
             </p>
@@ -496,6 +550,7 @@ const MyProfile = () => {
             <h2>
               About Me
             </h2>
+
           </div>
 
         </div>
@@ -524,6 +579,7 @@ const MyProfile = () => {
           </div>
 
           <div>
+
             <p>
               WHO I AM
             </p>
@@ -531,6 +587,7 @@ const MyProfile = () => {
             <h2>
               Personal Details
             </h2>
+
           </div>
 
         </div>
@@ -594,6 +651,7 @@ const MyProfile = () => {
           </div>
 
           <div>
+
             <p>
               MY JOURNEY
             </p>
@@ -601,6 +659,7 @@ const MyProfile = () => {
             <h2>
               Education & Career
             </h2>
+
           </div>
 
         </div>
@@ -636,6 +695,7 @@ const MyProfile = () => {
           </div>
 
           <div>
+
             <p>
               MY ROOTS
             </p>
@@ -692,6 +752,7 @@ const MyProfile = () => {
           </div>
 
           <div>
+
             <p>
               ACCOUNT
             </p>
