@@ -4,199 +4,145 @@ import axios from "axios";
 import { jwtDecode } from "jwt-decode";
 
 function AdminPanel() {
+  const navigate = useNavigate();
 
   const token = localStorage.getItem("token");
 
-  const decoded = jwtDecode(token);
+  let id = null;
 
-  const id = decoded.userId;
+  try {
+    if (token) {
+      const decoded = jwtDecode(token);
+      id = decoded?.userId;
+    }
+  } catch (error) {
+    console.log("TOKEN ERROR:", error);
+    localStorage.removeItem("token");
+    navigate("/");
+  }
 
-  console.log(id);
-
-  const navigate = useNavigate();
+  const API = "https://sapta-vachan-backend.onrender.com";
 
   const [users, setUsers] = useState([]);
-
-  const [activeFilter, setActiveFilter] =
-    useState("All");
-
-  const [search, setSearch] =
-    useState("");
-
-  const [showAccount, setShowAccount] =
-    useState(false);
-
-  const [sidebarOpen, setSidebarOpen] =
-    useState(false);
+  const [activeFilter, setActiveFilter] = useState("All");
+  const [search, setSearch] = useState("");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // =====================================
-  // BACKEND URL
+  // GET USERS
   // =====================================
-
-  const API =
-    "https://sapta-vachan-backend.onrender.com";
-
-  /* ================= GET USERS ================= */
 
   const getAllUsers = async () => {
-
     axios
       .get(`${API}/getalluser`)
       .then((res) => {
-
-        const result =
-          res.data.filter(
-            (users) => users._id != id
-          );
+        const result = res.data.filter(
+          (user) => user._id !== id
+        );
 
         setUsers(result);
       })
-      .catch((err) =>
-        console.log(err)
-      );
+      .catch((err) => {
+        console.log("GET USERS ERROR:", err);
+      });
   };
 
   useEffect(() => {
     getAllUsers();
   }, []);
 
-  /* ================= COUNTS ================= */
+  // =====================================
+  // COUNTS
+  // =====================================
 
-  const totalUsers =
-    users.length;
+  const totalUsers = users.length;
 
-  const maleUsers =
-    users.filter(
-      (user) =>
-        user.gender === "Male"
-    ).length;
+  const maleUsers = users.filter(
+    (user) => user.gender === "Male"
+  ).length;
 
-  const femaleUsers =
-    users.filter(
-      (user) =>
-        user.gender === "Female"
-    ).length;
+  const femaleUsers = users.filter(
+    (user) => user.gender === "Female"
+  ).length;
 
-  const completeUsers =
-    users.filter(
-      (user) =>
-        user.status === "Complete"
-    ).length;
+  const completeUsers = users.filter(
+    (user) => user.status === "Complete"
+  ).length;
 
-  const incompleteUsers =
-    users.filter(
-      (user) =>
-        user.status === "Incomplete"
-    ).length;
+  const incompleteUsers = users.filter(
+    (user) => user.status === "Incomplete"
+  ).length;
 
-  /* ================= FILTER ================= */
+  // =====================================
+  // FILTER
+  // =====================================
 
   const filterUsers = (filter) => {
-
     setActiveFilter(filter);
-
     setSidebarOpen(false);
   };
 
-  /* ================= SEARCH + FILTER ================= */
+  // =====================================
+  // SEARCH + FILTER
+  // =====================================
 
-  const filteredUsers =
-    users.filter((user) => {
+  const filteredUsers = users.filter((user) => {
+    const name = user.name || "";
+    const email = user.email || "";
+    const city = user.city || "";
 
-      const name =
-        user.name || "";
+    const searchValue = search.toLowerCase();
 
-      const email =
-        user.email || "";
+    const searchMatch =
+      name.toLowerCase().includes(searchValue) ||
+      email.toLowerCase().includes(searchValue) ||
+      city.toLowerCase().includes(searchValue);
 
-      const city =
-        user.city || "";
+    let filterMatch = true;
 
-      const searchValue =
-        search.toLowerCase();
-
-      const searchMatch =
-        name
-          .toLowerCase()
-          .includes(searchValue) ||
-
-        email
-          .toLowerCase()
-          .includes(searchValue) ||
-
-        city
-          .toLowerCase()
-          .includes(searchValue);
-
-      let filterMatch = true;
-
-      if (
-        activeFilter === "Male"
-      ) {
-        filterMatch =
-          user.gender === "Male";
-      }
-
-      if (
-        activeFilter === "Female"
-      ) {
-        filterMatch =
-          user.gender === "Female";
-      }
-
-      if (
-        activeFilter === "Complete"
-      ) {
-        filterMatch =
-          user.status === "Complete";
-      }
-
-      if (
-        activeFilter === "Incomplete"
-      ) {
-        filterMatch =
-          user.status === "Incomplete";
-      }
-
-      return (
-        searchMatch &&
-        filterMatch
-      );
-    });
-
-  /* ================= DELETE ================= */
-
-  const deleteUser = async (id) => {
-
-    const confirmDelete =
-      window.confirm(
-        "Are you sure you want to remove this user?"
-      );
-
-    if (!confirmDelete) {
-      return;
+    if (activeFilter === "Male") {
+      filterMatch = user.gender === "Male";
     }
 
+    if (activeFilter === "Female") {
+      filterMatch = user.gender === "Female";
+    }
+
+    if (activeFilter === "Complete") {
+      filterMatch = user.status === "Complete";
+    }
+
+    if (activeFilter === "Incomplete") {
+      filterMatch = user.status === "Incomplete";
+    }
+
+    return searchMatch && filterMatch;
+  });
+
+  // =====================================
+  // DELETE
+  // =====================================
+
+  const deleteUser = async (userId) => {
+    const confirmDelete = window.confirm(
+      "Are you sure you want to remove this user?"
+    );
+
+    if (!confirmDelete) return;
+
     try {
-
       await axios.delete(
-        `${API}/deleteUser/${id}`
+        `${API}/deleteUser/${userId}`
       );
 
-      setUsers(
-        (prevUsers) =>
-          prevUsers.filter(
-            (user) =>
-              user._id !== id
-          )
+      setUsers((prevUsers) =>
+        prevUsers.filter(
+          (user) => user._id !== userId
+        )
       );
 
-      alert(
-        "User deleted successfully"
-      );
-
+      alert("User deleted successfully");
     } catch (error) {
-
       console.log(
         "DELETE USER ERROR:",
         error
@@ -204,86 +150,82 @@ function AdminPanel() {
     }
   };
 
-  /* ================= VIEW USER ================= */
+  // =====================================
+  // VIEW PROFILE
+  // =====================================
 
-  const viewUser = (id) => {
-
-    navigate(
-      `/profiledetail/${id}`
-    );
+  const viewUser = (userId) => {
+    navigate(`/profiledetail/${userId}`);
   };
 
-  /* ================= LOGOUT ================= */
+  // =====================================
+  // LOGOUT
+  // =====================================
 
   const logout = () => {
-
-    localStorage.removeItem(
-      "token"
-    );
-
+    localStorage.removeItem("token");
     navigate("/");
   };
 
-  /* ================= SIDEBAR NAV ================= */
+  // =====================================
+  // NAVIGATION
+  // =====================================
 
   const goTo = (path) => {
-
     setSidebarOpen(false);
-
-    setShowAccount(false);
-
     navigate(path);
   };
 
   return (
+    <div className="sv-admin-shell">
 
-    <div className="admin-page">
-
-      {/* ================= SIDEBAR OVERLAY ================= */}
+      {/* =================================
+          OVERLAY
+      ================================= */}
 
       {sidebarOpen && (
         <div
-          className="admin-overlay"
+          className="sv-admin-backdrop"
           onClick={() =>
             setSidebarOpen(false)
           }
         />
       )}
 
-      {/* ================= SIDEBAR ================= */}
+      {/* =================================
+          SIDEBAR
+      ================================= */}
 
       <aside
-        className={`admin-sidebar ${
-          sidebarOpen ? "show" : ""
+        className={`sv-admin-drawer ${
+          sidebarOpen
+            ? "sv-admin-drawer-open"
+            : ""
         }`}
       >
 
-        {/* SIDEBAR BRAND */}
+        {/* BRAND */}
 
-        <div className="admin-sidebar-header">
+        <div className="sv-admin-drawer-top">
 
-          <div className="admin-sidebar-brand">
+          <div className="sv-admin-brand">
 
-            <div className="admin-brand-circle">
+            <div className="sv-admin-brand-mark">
               स
             </div>
 
             <div>
-
-              <h2>
-                Sapta Vachan
-              </h2>
+              <h2>Sapta Vachan</h2>
 
               <span>
-                Admin Panel
+                ADMIN SPACE
               </span>
-
             </div>
 
           </div>
 
           <button
-            className="admin-sidebar-close"
+            className="sv-admin-close"
             onClick={() =>
               setSidebarOpen(false)
             }
@@ -293,101 +235,82 @@ function AdminPanel() {
 
         </div>
 
-        {/* ADMIN PROFILE */}
+        {/* ADMIN CARD */}
 
-        <div className="admin-sidebar-profile">
+        <div className="sv-admin-user-card">
 
-          <div className="admin-sidebar-avatar">
-
-            <i className="fa-solid fa-user"></i>
-
+          <div className="sv-admin-user-avatar">
+            <i className="fa-solid fa-user-shield"></i>
           </div>
 
           <div>
-
-            <strong>
-              Admin
-            </strong>
-
-            <span>
-              Administrator
-            </span>
-
+            <strong>Administrator</strong>
+            <span>Managing Sapta Vachan</span>
           </div>
 
         </div>
 
-        {/* NAVIGATION */}
+        {/* NAV */}
 
-        <nav className="admin-sidebar-menu">
+        <div className="sv-admin-nav-label">
+          MANAGEMENT
+        </div>
+
+        <nav className="sv-admin-navigation">
 
           <button
-            className="active"
+            className="sv-admin-nav-active"
             onClick={() =>
               goTo("/admin")
             }
           >
-
-            <i className="fa-solid fa-chart-line"></i>
-
-            <span>
-              Dashboard
+            <span className="sv-admin-nav-icon">
+              <i className="fa-solid fa-chart-pie"></i>
             </span>
 
+            <span>Dashboard</span>
           </button>
 
           <button
-            onClick={() => {
-
-              setActiveFilter("All");
-
-              setSidebarOpen(false);
-
-            }}
+            onClick={() =>
+              filterUsers("All")
+            }
           >
-
-            <i className="fa-solid fa-users"></i>
-
-            <span>
-              All Users
+            <span className="sv-admin-nav-icon">
+              <i className="fa-solid fa-users"></i>
             </span>
 
+            <span>All Users</span>
+
+            <b>{totalUsers}</b>
           </button>
 
           <button
-            onClick={() => {
-
-              setActiveFilter("Male");
-
-              setSidebarOpen(false);
-
-            }}
+            onClick={() =>
+              filterUsers("Male")
+            }
           >
-
-            <i className="fa-solid fa-mars"></i>
-
-            <span>
-              Male Users
+            <span className="sv-admin-nav-icon">
+              <i className="fa-solid fa-mars"></i>
             </span>
 
+            <span>Male Users</span>
+
+            <b>{maleUsers}</b>
           </button>
 
           <button
-            onClick={() => {
-
-              setActiveFilter("Female");
-
-              setSidebarOpen(false);
-
-            }}
+            onClick={() =>
+              filterUsers("Female")
+            }
           >
-
-            <i className="fa-solid fa-venus"></i>
-
-            <span>
-              Female Users
+            <span className="sv-admin-nav-icon">
+              <i className="fa-solid fa-venus"></i>
             </span>
 
+            <span>Female Users</span>
+
+            <b>{femaleUsers}</b>
           </button>
 
           <button
@@ -395,13 +318,11 @@ function AdminPanel() {
               goTo("/myprofile")
             }
           >
-
-            <i className="fa-solid fa-user"></i>
-
-            <span>
-              My Profile
+            <span className="sv-admin-nav-icon">
+              <i className="fa-solid fa-user"></i>
             </span>
 
+            <span>My Profile</span>
           </button>
 
           <button
@@ -409,475 +330,507 @@ function AdminPanel() {
               goTo("/settings")
             }
           >
-
-            <i className="fa-solid fa-gear"></i>
-
-            <span>
-              Settings
+            <span className="sv-admin-nav-icon">
+              <i className="fa-solid fa-gear"></i>
             </span>
 
+            <span>Settings</span>
           </button>
 
         </nav>
 
-        {/* LOGOUT */}
+        {/* SIDEBAR BOTTOM */}
 
-        <button
-          className="admin-sidebar-logout"
-          onClick={logout}
-        >
+        <div className="sv-admin-drawer-bottom">
 
-          <i className="fa-solid fa-right-from-bracket"></i>
+          <div className="sv-admin-sidebar-note">
+            <i className="fa-solid fa-heart"></i>
 
-          <span>
-            Logout
-          </span>
+            <div>
+              <strong>Meaningful connections</strong>
+              <span>Seven vows. One lifetime.</span>
+            </div>
+          </div>
 
-        </button>
+          <button
+            className="sv-admin-logout"
+            onClick={logout}
+          >
+            <i className="fa-solid fa-right-from-bracket"></i>
+
+            <span>Logout</span>
+          </button>
+
+        </div>
 
       </aside>
 
-      {/* ================= TOP BAR ================= */}
+      {/* =================================
+          MAIN AREA
+      ================================= */}
 
-      <header className="admin-topbar">
+      <div className="sv-admin-main">
 
-        <div className="admin-top-left">
+        {/* TOP BAR */}
 
-          <button
-            className="admin-menu-btn"
-            onClick={() =>
-              setSidebarOpen(true)
-            }
-            aria-label="Open admin menu"
-          >
-            ☰
-          </button>
+        <header className="sv-admin-topbar">
 
-          <div className="admin-mobile-brand">
+          <div className="sv-admin-top-left">
 
-            <strong>
-              SAPTA VACHAN
-            </strong>
+            <button
+              className="sv-admin-menu"
+              onClick={() =>
+                setSidebarOpen(true)
+              }
+            >
+              <i className="fa-solid fa-bars"></i>
+            </button>
 
-            <span>
-              Admin Dashboard
-            </span>
-
-          </div>
-
-        </div>
-
-      </header>
-
-      {/* ================= MAIN ================= */}
-
-      <main className="admin-content">
-
-        {/* PAGE TITLE */}
-
-        <div className="dashboard-title">
-
-          <div>
-
-            <p>
-              DASHBOARD
-            </p>
-
-            <h1>
-              Overview
-            </h1>
-
-            <span>
-              Manage your matrimonial
-              community from here.
-            </span>
+            <div className="sv-admin-mobile-title">
+              <strong>SAPTA VACHAN</strong>
+              <span>ADMIN SPACE</span>
+            </div>
 
           </div>
 
-        </div>
+          <div className="sv-admin-top-right">
 
-        {/* ================= WELCOME ================= */}
+            <div className="sv-admin-status">
+              <span></span>
+              Admin online
+            </div>
 
-        <section className="welcome-section">
-
-          <div>
-
-            <p>
-              WELCOME BACK, ADMIN
-            </p>
-
-            <h2>
-              Keep your community{" "}
-              <em>
-                meaningful.
-              </em>
-            </h2>
-
-            <small>
-              Manage members, review
-              profiles and keep
-              Sapta Vachan safe.
-            </small>
+            <button
+              className="sv-admin-profile-mini"
+              onClick={() =>
+                goTo("/myprofile")
+              }
+            >
+              <i className="fa-solid fa-user"></i>
+            </button>
 
           </div>
 
-          <div className="welcome-icon">
+        </header>
 
-            <i className="fa-solid fa-heart"></i>
+        {/* CONTENT */}
 
-          </div>
+        <main className="sv-admin-content">
 
-        </section>
+          {/* PAGE INTRO */}
 
-        {/* ================= STATS ================= */}
+          <section className="sv-admin-intro">
 
-        <section className="stats-grid">
+            <div>
 
-          <div
-            className={`stat-card clickable ${
-              activeFilter === "All"
-                ? "selected"
-                : ""
-            }`}
-            onClick={() =>
-              filterUsers("All")
-            }
-          >
+              <span className="sv-admin-kicker">
+                ADMIN DASHBOARD
+              </span>
 
-            <div className="stat-icon">
+              <h1>
+                Community
+                <em> Overview</em>
+              </h1>
+
+              <p>
+                Manage members and keep
+                every connection meaningful.
+              </p>
+
+            </div>
+
+            <div className="sv-admin-date-card">
+
+              <div>
+                <span>MEMBERS</span>
+                <strong>{totalUsers}</strong>
+              </div>
 
               <i className="fa-solid fa-users"></i>
 
             </div>
 
-            <div>
+          </section>
+
+          {/* WELCOME CARD */}
+
+          <section className="sv-admin-welcome">
+
+            <div className="sv-admin-welcome-content">
 
               <span>
-                Total Users
+                WELCOME BACK, ADMIN
               </span>
-
-              <h3>
-                {totalUsers}
-              </h3>
-
-              <small>
-                View all members →
-              </small>
-
-            </div>
-
-          </div>
-
-          <div
-            className={`stat-card clickable ${
-              activeFilter === "Male"
-                ? "selected"
-                : ""
-            }`}
-            onClick={() =>
-              filterUsers("Male")
-            }
-          >
-
-            <div className="stat-icon">
-
-              <i className="fa-solid fa-mars"></i>
-
-            </div>
-
-            <div>
-
-              <span>
-                Men
-              </span>
-
-              <h3>
-                {maleUsers}
-              </h3>
-
-              <small>
-                View male profiles →
-              </small>
-
-            </div>
-
-          </div>
-
-          <div
-            className={`stat-card clickable ${
-              activeFilter === "Female"
-                ? "selected"
-                : ""
-            }`}
-            onClick={() =>
-              filterUsers("Female")
-            }
-          >
-
-            <div className="stat-icon">
-
-              <i className="fa-solid fa-venus"></i>
-
-            </div>
-
-            <div>
-
-              <span>
-                Women
-              </span>
-
-              <h3>
-                {femaleUsers}
-              </h3>
-
-              <small>
-                View female profiles →
-              </small>
-
-            </div>
-
-          </div>
-
-          <div className="stat-card">
-
-            <div className="stat-icon">
-
-              <i className="fa-solid fa-user-plus"></i>
-
-            </div>
-
-            <div>
-
-              <span>
-                New Today
-              </span>
-
-              <h3>
-                18
-              </h3>
-
-              <small>
-                Recently joined →
-              </small>
-
-            </div>
-
-          </div>
-
-        </section>
-
-        {/* ================= USER MANAGEMENT ================= */}
-
-        <section className="users-card">
-
-          <div className="users-top">
-
-            <div>
-
-              <p>
-                MEMBERS
-              </p>
 
               <h2>
-                User Management
+                Build a community
+                <br />
+                <em>worth belonging to.</em>
               </h2>
 
-              <span>
-                {filteredUsers.length}
-                {" "}members showing
-              </span>
+              <p>
+                Review profiles, manage
+                members and keep Sapta
+                Vachan a trusted space.
+              </p>
 
             </div>
 
-            <div className="search-box">
+            <div className="sv-admin-welcome-art">
 
-              <i className="fa-solid fa-magnifying-glass"></i>
+              <div className="sv-admin-heart-ring">
+                <i className="fa-solid fa-heart"></i>
+              </div>
 
-              <input
-                type="text"
-                placeholder="Search users..."
-                value={search}
-                onChange={(e) =>
-                  setSearch(
-                    e.target.value
-                  )
-                }
-              />
+              <span className="sv-admin-art-dot dot-one"></span>
+              <span className="sv-admin-art-dot dot-two"></span>
+              <span className="sv-admin-art-dot dot-three"></span>
 
             </div>
 
-          </div>
+          </section>
 
-          {/* FILTERS */}
+          {/* STATS */}
 
-          <div className="filter-row">
+          <section className="sv-admin-stats">
 
-            {[
-              ["All", "All Users"],
-              ["Male", "Male"],
-              ["Female", "Female"],
-              ["Complete", "Complete"],
-              [
-                "Incomplete",
-                "Pending",
-              ],
-            ].map(
-              ([value, label]) => (
+            <button
+              className={`sv-admin-stat ${
+                activeFilter === "All"
+                  ? "sv-admin-stat-selected"
+                  : ""
+              }`}
+              onClick={() =>
+                filterUsers("All")
+              }
+            >
 
+              <div className="sv-admin-stat-icon">
+                <i className="fa-solid fa-users"></i>
+              </div>
+
+              <div>
+                <span>Total Members</span>
+                <strong>{totalUsers}</strong>
+                <small>View all members →</small>
+              </div>
+
+            </button>
+
+            <button
+              className={`sv-admin-stat ${
+                activeFilter === "Male"
+                  ? "sv-admin-stat-selected"
+                  : ""
+              }`}
+              onClick={() =>
+                filterUsers("Male")
+              }
+            >
+
+              <div className="sv-admin-stat-icon">
+                <i className="fa-solid fa-mars"></i>
+              </div>
+
+              <div>
+                <span>Male Members</span>
+                <strong>{maleUsers}</strong>
+                <small>View male profiles →</small>
+              </div>
+
+            </button>
+
+            <button
+              className={`sv-admin-stat ${
+                activeFilter === "Female"
+                  ? "sv-admin-stat-selected"
+                  : ""
+              }`}
+              onClick={() =>
+                filterUsers("Female")
+              }
+            >
+
+              <div className="sv-admin-stat-icon">
+                <i className="fa-solid fa-venus"></i>
+              </div>
+
+              <div>
+                <span>Female Members</span>
+                <strong>{femaleUsers}</strong>
+                <small>View female profiles →</small>
+              </div>
+
+            </button>
+
+            <div className="sv-admin-stat">
+
+              <div className="sv-admin-stat-icon">
+                <i className="fa-solid fa-user-clock"></i>
+              </div>
+
+              <div>
+                <span>Pending Profiles</span>
+                <strong>{incompleteUsers}</strong>
+                <small>Needs attention →</small>
+              </div>
+
+            </div>
+
+          </section>
+
+          {/* USER MANAGEMENT */}
+
+          <section className="sv-admin-users-panel">
+
+            <div className="sv-admin-panel-head">
+
+              <div>
+
+                <span>MEMBERS</span>
+
+                <h2>
+                  User Management
+                </h2>
+
+                <p>
+                  {filteredUsers.length} members
+                  currently showing
+                </p>
+
+              </div>
+
+              <div className="sv-admin-search">
+
+                <i className="fa-solid fa-magnifying-glass"></i>
+
+                <input
+                  type="text"
+                  placeholder="Search by name, email or city..."
+                  value={search}
+                  onChange={(e) =>
+                    setSearch(
+                      e.target.value
+                    )
+                  }
+                />
+
+                {search && (
+                  <button
+                    onClick={() =>
+                      setSearch("")
+                    }
+                  >
+                    ×
+                  </button>
+                )}
+
+              </div>
+
+            </div>
+
+            {/* FILTER BAR */}
+
+            <div className="sv-admin-filter-bar">
+
+              {[
+                ["All", "All Users"],
+                ["Male", "Male"],
+                ["Female", "Female"],
+                ["Complete", "Complete"],
+                ["Incomplete", "Pending"],
+              ].map(([value, label]) => (
                 <button
                   key={value}
                   className={
-                    activeFilter ===
-                    value
-                      ? "active-filter"
+                    activeFilter === value
+                      ? "sv-admin-filter-active"
                       : ""
                   }
                   onClick={() =>
-                    filterUsers(
-                      value
-                    )
+                    filterUsers(value)
                   }
                 >
                   {label}
                 </button>
-
-              )
-            )}
-
-          </div>
-
-          {/* TABLE */}
-
-          <div className="users-table">
-
-            <div className="table-head">
-
-              <span>
-                User
-              </span>
-
-              <span>
-                Email
-              </span>
-
-              <span>
-                Gender
-              </span>
-
-              <span>
-                City
-              </span>
-
-              <span>
-                Status
-              </span>
-
-              <span>
-                Action
-              </span>
+              ))}
 
             </div>
 
-            {filteredUsers.map(
-              (user) => (
+            {/* TABLE */}
 
-                <div
-                  className="user-row"
-                  key={user._id}
-                >
+            <div className="sv-admin-table-wrap">
 
-                  {/* USER */}
+              <div className="sv-admin-table-head">
 
-                  <div className="user-details">
+                <span>User</span>
+                <span>Email</span>
+                <span>Gender</span>
+                <span>Location</span>
+                <span>Status</span>
+                <span>Action</span>
 
-                    <div className="user-avatar">
+              </div>
 
-                      {user.name
-                        ? user.name
-                            .charAt(0)
-                            .toUpperCase()
-                        : "U"}
+              {filteredUsers.map(
+                (user) => (
+
+                  <div
+                    className="sv-admin-user-row"
+                    key={user._id}
+                  >
+
+                    <div className="sv-admin-user-info">
+
+                      <div className="sv-admin-user-picture">
+
+                        {user.name
+                          ? user.name
+                              .charAt(0)
+                              .toUpperCase()
+                          : "U"}
+
+                      </div>
+
+                      <div>
+                        <strong>
+                          {user.name ||
+                            "Unknown User"}
+                        </strong>
+
+                        <span>
+                          {user.age
+                            ? `${user.age} years`
+                            : "Age not added"}
+                        </span>
+                      </div>
 
                     </div>
 
-                    <div>
+                    <div className="sv-admin-email">
+                      {user.email || "-"}
+                    </div>
 
-                      <strong>
-                        {user.name ||
-                          "Unknown User"}
-                      </strong>
+                    <div className="sv-admin-gender">
+                      <i
+                        className={
+                          user.gender ===
+                          "Male"
+                            ? "fa-solid fa-mars"
+                            : "fa-solid fa-venus"
+                        }
+                      ></i>
 
-                      <small>
-                        {user.age ||
-                          "-"}{" "}
-                        years old
-                      </small>
+                      {user.gender || "-"}
+                    </div>
+
+                    <div className="sv-admin-location">
+                      <i className="fa-solid fa-location-dot"></i>
+
+                      {user.city || "-"}
+                    </div>
+
+                    <div
+                      className={`sv-admin-status-pill ${
+                        user.status ===
+                        "Complete"
+                          ? "sv-admin-complete"
+                          : "sv-admin-incomplete"
+                      }`}
+                    >
+                      <i className="fa-solid fa-circle"></i>
+
+                      {user.status ||
+                        "Incomplete"}
+                    </div>
+
+                    <div className="sv-admin-actions">
+
+                      <button
+                        className="sv-admin-view"
+                        title="View Profile"
+                        onClick={() =>
+                          viewUser(
+                            user._id
+                          )
+                        }
+                      >
+                        <i className="fa-solid fa-eye"></i>
+                      </button>
+
+                      <button
+                        className="sv-admin-delete"
+                        title="Delete User"
+                        onClick={() =>
+                          deleteUser(
+                            user._id
+                          )
+                        }
+                      >
+                        <i className="fa-solid fa-trash"></i>
+                      </button>
 
                     </div>
 
                   </div>
 
-                  {/* EMAIL */}
+                )
+              )}
 
-                  <span className="email">
-                    {user.email ||
-                      "-"}
-                  </span>
+              {filteredUsers.length === 0 && (
+                <div className="sv-admin-empty">
 
-                  {/* GENDER */}
+                  <div>
+                    <i className="fa-solid fa-user-slash"></i>
+                  </div>
 
-                  <span className="gender">
+                  <h3>No members found</h3>
 
-                    <i
-                      className={
-                        user.gender ===
-                        "Male"
-                          ? "fa-solid fa-mars"
-                          : "fa-solid fa-venus"
-                      }
-                    ></i>
+                  <p>
+                    Try changing your search
+                    or selected filter.
+                  </p>
 
-                    {user.gender ||
-                      "-"}
+                </div>
+              )}
 
-                  </span>
+            </div>
 
-                  {/* CITY */}
+          </section>
 
-                  <span className="city">
+          {/* BOTTOM AREA */}
 
-                    <i className="fa-solid fa-location-dot"></i>
+          <section className="sv-admin-bottom-grid">
 
-                    {user.city ||
-                      "-"}
+            {/* RECENT */}
 
-                  </span>
+            <div className="sv-admin-bottom-card">
 
-                  {/* STATUS */}
+              <div className="sv-admin-bottom-head">
 
-                  <span
-                    className={
-                      user.status ===
-                      "Complete"
-                        ? "status complete"
-                        : "status incomplete"
-                    }
-                  >
+                <div>
+                  <span>RECENT</span>
 
-                    <i className="fa-solid fa-circle"></i>
+                  <h3>
+                    New Registrations
+                  </h3>
+                </div>
 
-                    {user.status ||
-                      "Incomplete"}
+                <div className="sv-admin-bottom-icon">
+                  <i className="fa-solid fa-user-plus"></i>
+                </div>
 
-                  </span>
+              </div>
 
-                  {/* ACTION */}
+              <div className="sv-admin-recent-list">
 
-                  <div className="actions">
+                {users
+                  .slice(0, 4)
+                  .map((user) => (
 
                     <button
-                      className="view-btn"
-                      title="View Profile"
+                      key={user._id}
+                      className="sv-admin-recent"
                       onClick={() =>
                         viewUser(
                           user._id
@@ -885,262 +838,130 @@ function AdminPanel() {
                       }
                     >
 
-                      <i className="fa-solid fa-eye"></i>
+                      <div className="sv-admin-recent-avatar">
+                        {user.name
+                          ? user.name
+                              .charAt(0)
+                              .toUpperCase()
+                          : "U"}
+                      </div>
+
+                      <div>
+                        <strong>
+                          {user.name ||
+                            "Unknown"}
+                        </strong>
+
+                        <span>
+                          {user.city || "-"}
+                        </span>
+                      </div>
+
+                      <b>New</b>
 
                     </button>
 
-                    <button
-                      className="delete-btn"
-                      title="Remove User"
-                      onClick={() =>
-                        deleteUser(
-                          user._id
-                        )
-                      }
-                    >
+                  ))}
 
-                      <i className="fa-solid fa-trash"></i>
+              </div>
 
-                    </button>
+            </div>
 
-                  </div>
+            {/* PROFILE OVERVIEW */}
 
+            <div className="sv-admin-bottom-card">
+
+              <div className="sv-admin-bottom-head">
+
+                <div>
+                  <span>COMMUNITY</span>
+
+                  <h3>
+                    Profile Overview
+                  </h3>
                 </div>
 
-              )
-            )}
-
-            {/* NO USERS */}
-
-            {filteredUsers.length ===
-              0 && (
-
-              <div className="no-users">
-
-                <i className="fa-solid fa-user-slash"></i>
-
-                <h3>
-                  No users found
-                </h3>
-
-                <p>
-                  Try another search
-                  or filter.
-                </p>
+                <div className="sv-admin-bottom-icon">
+                  <i className="fa-solid fa-chart-simple"></i>
+                </div>
 
               </div>
 
-            )}
+              <div className="sv-admin-overview-list">
 
-          </div>
+                <button
+                  onClick={() =>
+                    filterUsers(
+                      "Complete"
+                    )
+                  }
+                >
+                  <span>
+                    <i className="fa-solid fa-circle-check"></i>
+                    Complete profiles
+                  </span>
 
-        </section>
+                  <strong>
+                    {completeUsers}
+                  </strong>
+                </button>
 
-        {/* ================= BOTTOM GRID ================= */}
+                <button
+                  onClick={() =>
+                    filterUsers(
+                      "Incomplete"
+                    )
+                  }
+                >
+                  <span>
+                    <i className="fa-solid fa-user-clock"></i>
+                    Pending profiles
+                  </span>
 
-        <div className="bottom-grid">
+                  <strong>
+                    {incompleteUsers}
+                  </strong>
+                </button>
 
-          {/* RECENT */}
+                <button
+                  onClick={() =>
+                    filterUsers("Male")
+                  }
+                >
+                  <span>
+                    <i className="fa-solid fa-mars"></i>
+                    Male members
+                  </span>
 
-          <div className="bottom-card">
+                  <strong>
+                    {maleUsers}
+                  </strong>
+                </button>
 
-            <div className="bottom-title">
+                <button
+                  onClick={() =>
+                    filterUsers("Female")
+                  }
+                >
+                  <span>
+                    <i className="fa-solid fa-venus"></i>
+                    Female members
+                  </span>
 
-              <div>
-
-                <p>
-                  RECENT
-                </p>
-
-                <h3>
-                  New Registrations
-                </h3>
-
-              </div>
-
-              <div className="bottom-icon">
-
-                <i className="fa-solid fa-user-plus"></i>
-
-              </div>
-
-            </div>
-
-            <div className="recent-list">
-
-              {users
-                .slice(0, 4)
-                .map((user) => (
-
-                  <div
-                    className="recent-user"
-                    key={user._id}
-                    onClick={() =>
-                      viewUser(
-                        user._id
-                      )
-                    }
-                  >
-
-                    <div className="recent-avatar">
-
-                      {user.name
-                        ? user.name
-                            .charAt(0)
-                            .toUpperCase()
-                        : "U"}
-
-                    </div>
-
-                    <div>
-
-                      <strong>
-                        {user.name ||
-                          "Unknown"}
-                      </strong>
-
-                      <small>
-                        {user.city ||
-                          "-"}
-                      </small>
-
-                    </div>
-
-                    <span>
-                      New
-                    </span>
-
-                  </div>
-
-                ))}
-
-            </div>
-
-          </div>
-
-          {/* COMMUNITY */}
-
-          <div className="bottom-card">
-
-            <div className="bottom-title">
-
-              <div>
-
-                <p>
-                  COMMUNITY
-                </p>
-
-                <h3>
-                  Profile Overview
-                </h3>
-
-              </div>
-
-              <div className="bottom-icon">
-
-                <i className="fa-solid fa-chart-simple"></i>
+                  <strong>
+                    {femaleUsers}
+                  </strong>
+                </button>
 
               </div>
 
             </div>
 
-            <div className="activity-list">
+          </section>
 
-              <div
-                onClick={() =>
-                  filterUsers(
-                    "Complete"
-                  )
-                }
-              >
+        </main>
 
-                <span>
-
-                  <i className="fa-solid fa-circle-check"></i>
-
-                  Complete profiles
-
-                </span>
-
-                <strong>
-                  {completeUsers}
-                </strong>
-
-              </div>
-
-              <div
-                onClick={() =>
-                  filterUsers(
-                    "Incomplete"
-                  )
-                }
-              >
-
-                <span>
-
-                  <i className="fa-solid fa-user-clock"></i>
-
-                  Pending profiles
-
-                </span>
-
-                <strong>
-                  {incompleteUsers}
-                </strong>
-
-              </div>
-
-              <div
-                onClick={() =>
-                  filterUsers(
-                    "Male"
-                  )
-                }
-              >
-
-                <span>
-
-                  <i className="fa-solid fa-mars"></i>
-
-                  Male members
-
-                </span>
-
-                <strong>
-                  {maleUsers}
-                </strong>
-
-              </div>
-
-              <div
-                onClick={() =>
-                  filterUsers(
-                    "Female"
-                  )
-                }
-              >
-
-                <span>
-
-                  <i className="fa-solid fa-venus"></i>
-
-                  Female members
-
-                </span>
-
-                <strong>
-                  {femaleUsers}
-                </strong>
-
-              </div>
-
-            </div>
-
-          </div>
-
-        </div>
-
-      </main>
+      </div>
 
     </div>
   );
