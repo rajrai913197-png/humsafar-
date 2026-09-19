@@ -39,10 +39,15 @@ const MyProfile = () => {
       );
 
       console.log("PROFILE DATA:", res.data);
+      console.log("IMAGE URL:", res.data.image);
 
       setProfile(res.data);
+
     } catch (error) {
-      console.log("GET PROFILE ERROR:", error);
+      console.log(
+        "GET PROFILE ERROR:",
+        error.response?.data || error.message
+      );
     }
   };
 
@@ -173,7 +178,7 @@ const MyProfile = () => {
 
             {profile.image ? (
               <img
-                src={`${API}/upload/${profile.image}`}
+                src={profile.image}
                 alt={profile.name || "Profile"}
               />
             ) : (
@@ -369,7 +374,7 @@ const MyProfile = () => {
 
             {profile.image ? (
               <img
-                src={`${API}/upload/${profile.image}`}
+                src={profile.image}
                 alt={profile.name || "Profile"}
               />
             ) : (

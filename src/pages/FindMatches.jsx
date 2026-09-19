@@ -38,7 +38,7 @@ function FindMatches() {
     religion: "",
   });
 
-  // Temporary filter state inside drawer
+  // Temporary filter state
   const [tempFilters, setTempFilters] = useState({
     minAge: "",
     maxAge: "",
@@ -60,20 +60,28 @@ function FindMatches() {
         const myId = decoded?.userId;
 
         console.log("My ID:", myId);
+        console.log("ALL USERS:", res.data);
 
         // Current logged-in user ko remove karna
         const otherProfiles = res.data.filter(
           (profile) => profile._id !== myId
         );
 
-        // Original profiles
-        setProfiles(otherProfiles);
+        console.log("OTHER PROFILES:", otherProfiles);
 
-        // Initially all profiles show
+        // Cloudinary image URL check
+        otherProfiles.forEach((profile) => {
+          console.log(
+            `IMAGE - ${profile.name}:`,
+            profile.image
+          );
+        });
+
+        setProfiles(otherProfiles);
         setFilteredProfiles(otherProfiles);
       })
       .catch((err) => {
-        console.log(err);
+        console.log("GET USERS ERROR:", err);
       });
   };
 
@@ -207,8 +215,7 @@ function FindMatches() {
   }, [profiles, filters, search]);
 
   // =========================
-  // RESET PAGE WHEN SEARCH
-  // OR FILTER CHANGES
+  // RESET PAGE
   // =========================
 
   useEffect(() => {
@@ -263,7 +270,7 @@ function FindMatches() {
         receiver: selectedProfile._id,
       })
       .then((res) => {
-        console.log(res.data);
+        console.log("INTEREST RESPONSE:", res.data);
 
         setInterestSent((prev) => ({
           ...prev,
@@ -273,7 +280,10 @@ function FindMatches() {
         setInterestSuccess(true);
       })
       .catch((err) => {
-        console.log(err);
+        console.log(
+          "SEND INTEREST ERROR:",
+          err
+        );
 
         if (
           err.response?.data?.message ===
@@ -396,10 +406,12 @@ function FindMatches() {
       <section className="find-toolbar">
 
         <div className="results-count">
+
           <strong>
             {filteredProfiles.length}
           </strong>{" "}
           matches found
+
         </div>
 
         <div className="toolbar-actions">
@@ -449,17 +461,28 @@ function FindMatches() {
               key={profile._id}
             >
 
-              {/* IMAGE */}
+              {/* ================= IMAGE ================= */}
 
               <div className="match-image">
 
                 <img
                   src={
                     profile.image
-                      ? `${API}/upload/${profile.image}`
+                      ? profile.image
                       : "https://i.pravatar.cc/500?img=47"
                   }
-                  alt={profile.name}
+                  alt={
+                    profile.name || "Profile"
+                  }
+                  onError={(e) => {
+                    console.log(
+                      "IMAGE LOAD ERROR:",
+                      e.currentTarget.src
+                    );
+
+                    e.currentTarget.src =
+                      "https://i.pravatar.cc/500?img=47";
+                  }}
                 />
 
                 {profile.verified && (
@@ -473,11 +496,13 @@ function FindMatches() {
                 <button
                   className="heart-button"
                   onClick={() => {
+
                     if (!token) {
                       navigate("/login");
                     } else {
                       handleInterest(profile);
                     }
+
                   }}
                   disabled={
                     interestSent[profile._id]
@@ -490,18 +515,20 @@ function FindMatches() {
 
               </div>
 
-              {/* DETAILS */}
+              {/* ================= DETAILS ================= */}
 
               <div className="match-details">
 
                 <div className="name-line">
 
                   <h2>
+
                     {profile.name}
 
                     {profile.age
                       ? `, ${profile.age}`
                       : ""}
+
                   </h2>
 
                   <span className="online"></span>
@@ -509,29 +536,37 @@ function FindMatches() {
                 </div>
 
                 <p className="profession">
+
                   {profile.profession ||
                     "Profession not added"}
+
                 </p>
 
                 <p className="location">
+
                   ♧ &nbsp;
 
                   {profile.city ||
                     profile.location ||
                     "Location not added"}
+
                 </p>
 
                 <div className="short-info">
 
                   <span>
+
                     {profile.education ||
                       "Education"}
+
                   </span>
 
                   <span>
+
                     {profile.community ||
                       profile.religion ||
                       "Community"}
+
                   </span>
 
                 </div>
