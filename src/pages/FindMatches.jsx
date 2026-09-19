@@ -67,17 +67,20 @@ function FindMatches() {
 
         console.log("MY ID:", myId);
 
-        // Debug: backend se image exactly kya aa rahi hai
+        // EXACT IMAGE URL FROM BACKEND
         res.data.forEach((profile) => {
           console.log(
-            "PROFILE:",
-            profile.name,
-            "IMAGE:",
+            "PROFILE NAME:",
+            profile.name
+          );
+
+          console.log(
+            "BACKEND IMAGE:",
             profile.image
           );
         });
 
-        // Current logged-in user ko remove karo
+        // REMOVE CURRENT USER
         const otherProfiles = res.data.filter(
           (profile) =>
             profile._id?.toString() !== myId
@@ -118,7 +121,7 @@ function FindMatches() {
     // SEARCH
     if (search.trim()) {
       const searchValue =
-        search.toLowerCase();
+        search.toLowerCase().trim();
 
       result = result.filter((profile) => {
         return (
@@ -396,7 +399,6 @@ function FindMatches() {
       <section className="find-header">
 
         <div>
-
           <p className="find-label">
             DISCOVER CONNECTIONS
           </p>
@@ -409,7 +411,6 @@ function FindMatches() {
             Discover meaningful profiles who could be
             your perfect life partner.
           </p>
-
         </div>
 
       </section>
@@ -419,12 +420,10 @@ function FindMatches() {
       <section className="find-toolbar">
 
         <div className="results-count">
-
           <strong>
             {filteredProfiles.length}
           </strong>{" "}
           matches found
-
         </div>
 
         <div className="toolbar-actions">
@@ -446,7 +445,7 @@ function FindMatches() {
 
           </div>
 
-          {/* FILTER BUTTON */}
+          {/* FILTER */}
 
           <button
             className="filter-button"
@@ -478,35 +477,43 @@ function FindMatches() {
 
               <div className="match-image">
 
-                <img
-                  src={
-                    profile.image
-                      ? profile.image
-                      : "https://i.pravatar.cc/500?img=47"
-                  }
-                  alt={
-                    profile.name ||
-                    "Profile"
-                  }
-                  onLoad={() => {
-                    console.log(
-                      "CLOUDINARY IMAGE LOADED:",
-                      profile.name,
-                      profile.image,
-                      console.log(profile.image)
-                    );
-                  }}
-                  onError={(e) => {
-                    console.log(
-                      "CLOUDINARY IMAGE ERROR:",
-                      profile.name,
-                      profile.image
-                    );
+                {profile.image ? (
 
-                    e.currentTarget.src =
-                      "https://i.pravatar.cc/500?img=47";
-                  }}
-                />
+                  <img
+                    src={profile.image}
+                    alt={
+                      profile.name ||
+                      "Profile"
+                    }
+
+                    onLoad={() => {
+                      console.log(
+                        "REAL IMAGE LOADED:",
+                        profile.name,
+                        profile.image
+                      );
+                    }}
+
+                    onError={(e) => {
+                      console.log(
+                        "REAL IMAGE FAILED:",
+                        profile.name,
+                        profile.image
+                      );
+
+                      // NO BOT/FALLBACK IMAGE
+                      e.currentTarget.style.display =
+                        "none";
+                    }}
+                  />
+
+                ) : (
+
+                  <div className="no-image">
+                    No Image
+                  </div>
+
+                )}
 
                 {profile.verified && (
                   <span className="verified">
@@ -578,18 +585,14 @@ function FindMatches() {
                 <div className="short-info">
 
                   <span>
-
                     {profile.education ||
                       "Education"}
-
                   </span>
 
                   <span>
-
                     {profile.community ||
                       profile.religion ||
                       "Community"}
-
                   </span>
 
                 </div>
@@ -725,7 +728,6 @@ function FindMatches() {
             {!interestSuccess ? (
 
               <>
-
                 <div className="interest-popup-icon">
                   ♡
                 </div>
@@ -764,13 +766,11 @@ function FindMatches() {
                   </button>
 
                 </div>
-
               </>
 
             ) : (
 
               <>
-
                 <div className="interest-success-icon">
                   ✓
                 </div>
@@ -799,7 +799,6 @@ function FindMatches() {
                 >
                   Done
                 </button>
-
               </>
 
             )}
@@ -955,14 +954,12 @@ function FindMatches() {
                 </option>
 
                 {cities.map((city) => (
-
                   <option
                     key={city}
                     value={city}
                   >
                     {city}
                   </option>
-
                 ))}
 
               </select>
@@ -991,14 +988,12 @@ function FindMatches() {
 
                 {educations.map(
                   (education) => (
-
                     <option
                       key={education}
                       value={education}
                     >
                       {education}
                     </option>
-
                   )
                 )}
 
@@ -1028,14 +1023,12 @@ function FindMatches() {
 
                 {professions.map(
                   (profession) => (
-
                     <option
                       key={profession}
                       value={profession}
                     >
                       {profession}
                     </option>
-
                   )
                 )}
 
@@ -1065,14 +1058,12 @@ function FindMatches() {
 
                 {religions.map(
                   (religion) => (
-
                     <option
                       key={religion}
                       value={religion}
                     >
                       {religion}
                     </option>
-
                   )
                 )}
 

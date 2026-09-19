@@ -21,10 +21,15 @@ const ProfilesDetails = () => {
       .get(`${API}/getUserBy/${id}`)
       .then((res) => {
         console.log("PROFILE DETAIL:", res.data);
+        console.log("CLOUDINARY IMAGE:", res.data.image);
+
         setUserData(res.data);
       })
       .catch((err) => {
-        console.log("GET USER DETAIL ERROR:", err);
+        console.log(
+          "GET USER DETAIL ERROR:",
+          err.response?.data || err.message
+        );
       });
   };
 
@@ -52,13 +57,10 @@ const ProfilesDetails = () => {
   // ================================
 
   const sendInterest = () => {
-
-    // Login check
     if (!isLoggedIn()) {
       return;
     }
 
-    // User logged in
     setInterestSent(true);
 
     console.log(
@@ -71,19 +73,15 @@ const ProfilesDetails = () => {
   // ================================
 
   const handleMessage = () => {
-
-    // Login check first
     if (!isLoggedIn()) {
       return;
     }
 
-    // Logged in but interest not sent
     if (!interestSent) {
       setShowMessagePopup(true);
       return;
     }
 
-    // Interest already sent
     navigate(`/messages?user=${id}`);
   };
 
@@ -92,7 +90,6 @@ const ProfilesDetails = () => {
   // ================================
 
   const handlePopupInterest = () => {
-
     if (!isLoggedIn()) {
       return;
     }
@@ -136,8 +133,25 @@ const ProfilesDetails = () => {
 
               {profile.image ? (
                 <img
-                  src={`${API}/upload/${profile.image}`}
+                  src={profile.image}
                   alt={profile.name || "Profile"}
+
+                  onLoad={() => {
+                    console.log(
+                      "CLOUDINARY IMAGE LOADED:",
+                      profile.image
+                    );
+                  }}
+
+                  onError={(e) => {
+                    console.log(
+                      "CLOUDINARY IMAGE ERROR:",
+                      profile.image
+                    );
+
+                    e.currentTarget.style.display =
+                      "none";
+                  }}
                 />
               ) : (
                 <div className="profile-detail-placeholder">

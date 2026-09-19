@@ -4,7 +4,8 @@ import { useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 
 function Home() {
-   const API = "https://sapta-vachan-backend.onrender.com";
+  const API = "https://sapta-vachan-backend.onrender.com";
+
   const [profiles, setProfiles] = useState([]);
   const [age, setAge] = useState([]);
   const [city, setCity] = useState([]);
@@ -25,9 +26,21 @@ function Home() {
 
   const navigate = useNavigate();
 
+  // =========================
+  // TOKEN
+  // =========================
+
   const token = localStorage.getItem("token");
-  const decoded = token ? jwtDecode(token) : null;
-  const myId = decoded?.userId;
+
+  let decoded = null;
+
+  try {
+    decoded = token ? jwtDecode(token) : null;
+  } catch (error) {
+    console.log("JWT DECODE ERROR:", error);
+  }
+
+  const myId = decoded?.userId?.toString();
 
   console.log("My ID:", myId);
 
@@ -38,8 +51,12 @@ function Home() {
   const getAge = () => {
     axios
       .get(`${API}/ageGet`)
-      .then((res) => setAge(res.data))
-      .catch((err) => console.log(err));
+      .then((res) => {
+        setAge(res.data);
+      })
+      .catch((err) => {
+        console.log("AGE ERROR:", err);
+      });
   };
 
   // =========================
@@ -49,8 +66,12 @@ function Home() {
   const getCity = () => {
     axios
       .get(`${API}/getcity`)
-      .then((res) => setCity(res.data))
-      .catch((err) => console.log(err));
+      .then((res) => {
+        setCity(res.data);
+      })
+      .catch((err) => {
+        console.log("CITY ERROR:", err);
+      });
   };
 
   // =========================
@@ -60,8 +81,12 @@ function Home() {
   const GetGender = () => {
     axios
       .get(`${API}/getgender`)
-      .then((res) => setGender(res.data))
-      .catch((err) => console.log(err));
+      .then((res) => {
+        setGender(res.data);
+      })
+      .catch((err) => {
+        console.log("GENDER ERROR:", err);
+      });
   };
 
   // =========================
@@ -71,8 +96,12 @@ function Home() {
   const Getcommunity = () => {
     axios
       .get(`${API}/community`)
-      .then((res) => setCommunity(res.data))
-      .catch((err) => console.log(err));
+      .then((res) => {
+        setCommunity(res.data);
+      })
+      .catch((err) => {
+        console.log("COMMUNITY ERROR:", err);
+      });
   };
 
   // =========================
@@ -80,12 +109,13 @@ function Home() {
   // =========================
 
   const GetUser = () => {
-    if (
+    const hasFilter =
       profileFilter.age.length > 0 ||
       profileFilter.gender.length > 0 ||
       profileFilter.religion.length > 0 ||
-      profileFilter.city.length > 0
-    ) {
+      profileFilter.city.length > 0;
+
+    if (hasFilter) {
       axios
         .get(`${API}/filterUser`, {
           params: profileFilter,
@@ -94,24 +124,62 @@ function Home() {
           },
         })
         .then((res) => {
+          console.log("FILTER USERS:", res.data);
+
           const otherProfiles = res.data.filter(
-            (profile) => profile._id !== myId
+            (profile) =>
+              profile._id?.toString() !== myId
           );
+
+          console.log(
+            "FILTERED OTHER PROFILES:",
+            otherProfiles
+          );
+
+          otherProfiles.forEach((profile) => {
+            console.log(
+              "PROFILE:",
+              profile.name,
+              "IMAGE:",
+              profile.image
+            );
+          });
 
           setProfiles(otherProfiles);
         })
-        .catch((err) => console.log(err));
+        .catch((err) => {
+          console.log("FILTER USER ERROR:", err);
+        });
     } else {
       axios
         .get(`${API}/getUser`)
         .then((res) => {
+          console.log("ALL USERS:", res.data);
+
           const otherProfiles = res.data.filter(
-            (profile) => profile._id !== myId
+            (profile) =>
+              profile._id?.toString() !== myId
           );
+
+          console.log(
+            "OTHER PROFILES:",
+            otherProfiles
+          );
+
+          otherProfiles.forEach((profile) => {
+            console.log(
+              "PROFILE:",
+              profile.name,
+              "IMAGE:",
+              profile.image
+            );
+          });
 
           setProfiles(otherProfiles);
         })
-        .catch((err) => console.log(err));
+        .catch((err) => {
+          console.log("GET USERS ERROR:", err);
+        });
     }
   };
 
@@ -168,18 +236,15 @@ function Home() {
   // =========================
 
   const handleInterest = (profile) => {
-    // Already sent
     if (interestSent[profile._id]) {
       return;
     }
 
-    // Login check
     if (!token) {
       navigate("/login");
       return;
     }
 
-    // Open popup
     setSelectedProfile(profile);
     setInterestSuccess(false);
   };
@@ -199,7 +264,7 @@ function Home() {
         receiver: selectedProfile._id,
       })
       .then((res) => {
-        console.log(res.data);
+        console.log("INTEREST RESPONSE:", res.data);
 
         setInterestSent((prev) => ({
           ...prev,
@@ -209,9 +274,8 @@ function Home() {
         setInterestSuccess(true);
       })
       .catch((err) => {
-        console.log(err);
+        console.log("INTEREST ERROR:", err);
 
-        // Already sent from backend
         if (
           err.response?.data?.message ===
           "Interest already sent"
@@ -310,8 +374,9 @@ function Home() {
           </h1>
 
           <p className="hero-text">
-            Discover meaningful connections with someone who
-            shares your values, dreams and vision for life.
+            Discover meaningful connections with someone
+            who shares your values, dreams and vision for
+            life.
           </p>
 
           <button
@@ -336,7 +401,8 @@ function Home() {
           </h2>
 
           <p>
-            Search through profiles based on your preferences.
+            Search through profiles based on your
+            preferences.
           </p>
         </div>
 
@@ -422,17 +488,38 @@ function Home() {
               className="profile-card"
               key={profile._id}
             >
-              {/* IMAGE */}
+              {/* =========================
+                  IMAGE
+              ========================= */}
 
               <div className="profile-image">
-                <img
-                  src={
-                    profile.image
-                      ? `${API}/upload/${profile.image}`
-                      : "https://i.pravatar.cc/500?img=47"
-                  }
-                  alt={profile.name}
-                />
+                {profile.image ? (
+                  <img
+                    src={profile.image}
+                    alt={profile.name || "Profile"}
+                    onLoad={() => {
+                      console.log(
+                        "HOME REAL IMAGE LOADED:",
+                        profile.name,
+                        profile.image
+                      );
+                    }}
+                    onError={(e) => {
+                      console.log(
+                        "HOME REAL IMAGE FAILED:",
+                        profile.name,
+                        profile.image
+                      );
+
+                      e.currentTarget.style.display =
+                        "none";
+                    }}
+                  />
+                ) : (
+                  <div className="no-profile-image">
+                    No Image
+                  </div>
+                )}
 
                 <div className="verified-badge">
                   ✓ Verified
@@ -442,8 +529,12 @@ function Home() {
 
                 <button
                   className="like-button"
-                  onClick={() => handleInterest(profile)}
-                  disabled={interestSent[profile._id]}
+                  onClick={() =>
+                    handleInterest(profile)
+                  }
+                  disabled={
+                    interestSent[profile._id]
+                  }
                 >
                   {interestSent[profile._id]
                     ? "♥"
@@ -451,7 +542,9 @@ function Home() {
                 </button>
               </div>
 
-              {/* DETAILS */}
+              {/* =========================
+                  DETAILS
+              ========================= */}
 
               <div className="profile-details">
                 <div className="profile-name-row">
@@ -468,7 +561,8 @@ function Home() {
                 </p>
 
                 <p className="location">
-                  ♧ {profile.city || "Location not added"}
+                  ♧ {profile.city ||
+                    "Location not added"}
                 </p>
 
                 <div className="profile-divider"></div>
@@ -495,7 +589,9 @@ function Home() {
           ))}
         </div>
 
-        {/* EXPLORE */}
+        {/* =========================
+            EXPLORE
+        ========================= */}
 
         <button
           className="all-profiles-btn"
@@ -531,9 +627,7 @@ function Home() {
                   ♡
                 </div>
 
-                <h2>
-                  Send Interest?
-                </h2>
+                <h2>Send Interest?</h2>
 
                 <p>
                   Would you like to send an interest to
@@ -570,9 +664,7 @@ function Home() {
                   ✓
                 </div>
 
-                <h2>
-                  Interest Sent!
-                </h2>
+                <h2>Interest Sent!</h2>
 
                 <p>
                   Your interest has been sent successfully
