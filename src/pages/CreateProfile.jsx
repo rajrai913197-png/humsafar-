@@ -74,11 +74,14 @@ const CreateProfile = () => {
         siblings: user.siblings || "",
       });
 
+      // ================= CLOUDINARY IMAGE =================
+
       if (user.image) {
-        setExistingImage(
-          `${API}/upload/${user.image}`
-        );
+        setExistingImage(user.image);
+      } else {
+        setExistingImage("");
       }
+
     } catch (error) {
       console.log(
         "GET PROFILE ERROR:",
@@ -98,7 +101,8 @@ const CreateProfile = () => {
   const handleChange = (e) => {
     const { name, value, files } = e.target;
 
-    // IMAGE
+    // ================= IMAGE =================
+
     if (name === "image") {
       const file = files?.[0];
 
@@ -107,6 +111,7 @@ const CreateProfile = () => {
         image: file || null,
       }));
 
+      // Local preview before upload
       if (file) {
         setExistingImage(URL.createObjectURL(file));
       }
@@ -114,7 +119,8 @@ const CreateProfile = () => {
       return;
     }
 
-    // OTHER INPUTS
+    // ================= OTHER INPUTS =================
+
     setFormData((prev) => ({
       ...prev,
       [name]: value,
@@ -142,18 +148,17 @@ const CreateProfile = () => {
     data.append("religion", formData.religion);
     data.append("bio", formData.bio);
 
+    // Image
     if (formData.image) {
       data.append("image", formData.image);
     }
 
     data.append("fatherName", formData.fatherName);
     data.append("motherName", formData.motherName);
-
     data.append(
       "familyBackground",
       formData.familyBackground
     );
-
     data.append(
       "siblings",
       formData.siblings
@@ -178,11 +183,12 @@ const CreateProfile = () => {
       );
 
       navigate("/myprofile");
+
     } catch (error) {
       console.log(
         "UPDATE PROFILE ERROR:",
         error.response?.data ||
-          error.message
+        error.message
       );
     }
   };
@@ -285,6 +291,7 @@ const CreateProfile = () => {
                   onChange={handleChange}
                   required
                 >
+
                   <option value="">
                     Select gender
                   </option>
@@ -296,6 +303,7 @@ const CreateProfile = () => {
                   <option value="Female">
                     Female
                   </option>
+
                 </select>
 
               </div>
