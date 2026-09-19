@@ -7,7 +7,6 @@ function AdminPanel() {
   const navigate = useNavigate();
 
   const token = localStorage.getItem("token");
-
   let id = null;
 
   try {
